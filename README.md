@@ -1,15 +1,24 @@
-# Missão Recompensa - Frontend
+# Missão Recompensa — Frontend
 
-Sistema frontend para gamificação de tarefas infantis, desenvolvido com Astro e Tailwind CSS. Transforme tarefas diárias em missões épicas com recompensas!
+Frontend **SSR (Astro 5 + React + Tailwind)** do app **Missão Recompensa**: um
+gerenciador de tarefas infantil com gamificação. Transforma tarefas em missões
+épicas que crianças completam para ganhar pontos e resgatar recompensas.
 
-## 🎯 Conceito
+> Consome a API .NET (repositório `GerenciadorTasks`). Funciona com **login**
+> (cookie HttpOnly) — todas as telas de dados exigem autenticação.
 
-O **Missão Recompensa** transforma tarefas cotidianas em "missões épicas" que as crianças completam para ganhar recompensas. Cada tarefa se torna uma aventura com:
+---
 
-- 🗡️ **Missões** - Tarefas com nomes temáticos e divertidos
-- ⭐ **XP e Níveis** - Sistema de pontos por missão completada
-- 🏆 **Recompensas** - Prêmios desbloqueados com XP acumulado
-- 📅 **Agendamento** - Notificações no horário de cada missão
+## ✨ Funcionalidades
+
+- 🔐 **Login/registro** de responsável (cookie HttpOnly via backend)
+- 🧒 **Cadastro de crianças** com avatar
+- ✅ **Missões**: criar, concluir (gamificação de pontos por prioridade)
+- 🏆 **Ranking** por pontos
+- 🎁 **Recompensas**: criar e **resgatar** (desconta pontos da criança)
+- 🔔 **Notificações** automáticas (sininho com contador de não-lidas)
+
+---
 
 ## 🎨 Paleta de Cores
 
@@ -22,91 +31,95 @@ O **Missão Recompensa** transforma tarefas cotidianas em "missões épicas" que
 | Secondary | #F7B53B | Tags, badges                   |
 | Dark      | #4C4C5F | Textos, contraste              |
 
-- Node.js 18+
-- npm ou yarn
+---
 
-## 🚀 Instalação
+## 🧱 Stack
+
+- **Astro 5** em modo **SSR** (`output: 'server'`, adapter `@astrojs/node`)
+- **React 19** (ilhas interativas) + **Tailwind CSS**
+- **Vite** com **proxy `/api`** → backend (cookie same-origin no dev)
+- TypeScript
+
+> Por que SSR? As páginas buscam dados no frontmatter, que roda no servidor a
+> cada request com acesso ao cookie do navegador — necessário para a autenticação
+> e para dados dinâmicos funcionarem fora do `astro dev`.
+
+---
+
+## 🚀 Como rodar (desenvolvimento)
+
+Pré-requisitos: **Node.js 18+** e o **backend** rodando em `http://localhost:5104`.
 
 ```bash
-# Instalar as dependências
 npm install
+npm run dev      # http://localhost:4321
 ```
 
-## 🛠️ Desenvolvimento
+O `astro.config.mjs` configura o **proxy** `/api` → `http://localhost:5104`, então
+o frontend e a API compartilham a mesma origem (`localhost:4321`) e o cookie de
+auth funciona sem problema de `SameSite` cross-origin.
+
+**Credenciais de desenvolvimento** (criadas pelo seed do backend):
+```
+E-mail:  responsavel@exemplo.com
+Senha:   123456
+```
+
+### Variável de ambiente (opcional)
+```
+PUBLIC_API_BASE   # default: '' no cliente (proxy), 'http://localhost:5104' no SSR.
+                  # Em produção cross-origin, defina para a URL pública da API.
+```
+
+---
+
+## 📦 Build de produção
 
 ```bash
-# Iniciar o servidor de desenvolvimento
-npm run dev
+npm run build    # gera dist/server/entry.mjs (servidor Node standalone)
+node ./dist/server/entry.mjs   # sobe o servidor (define HOST/PORT conforme o adapter)
 ```
 
-O site estará disponível em `http://localhost:4321`
+> Em produção, sirva o frontend e a API no mesmo domínio (ou configure
+> `PUBLIC_API_BASE` + `SameSite=None;Secure` no cookie para cross-domain).
 
-## 🏗️ Build
+---
 
-```bash
-# Build para produção
-npm run build
-
-# Preview do build de produção
-npm run preview
-```
-
-## 🧪 Testes
-
-```bash
-# Executar testes unitários
-npm run test
-
-# Executar testes com interface visual
-npm run test:ui
-
-# Executar testes E2E
-npm run test:e2e
-```
-
-## 📁 Estrutura do Projeto
+## 🗂️ Estrutura
 
 ```
 src/
 ├── components/
-│   ├── ui/          # Componentes reutilizáveis (Button, Input, etc.)
-│   └── layout/      # Componentes de layout (Header, Footer)
-├── layouts/         # Layouts base
-├── pages/           # Páginas da aplicação
-├── styles/          # Estilos globais
-├── lib/             # Utilitários e tipos TypeScript
-└── test/            # Configuração de testes
+│   ├── layout/Header.astro        # navegação + sininho (contador de notificações)
+│   └── ui/                        # Button, Input, TaskForm, ChildSelector, ...
+├── layouts/BaseLayout.astro
+├── lib/
+│   ├── api.ts                     # cliente HTTP (SSR-aware: repassa cookie)
+│   ├── auth.ts                    # getSession(Astro) → redirect /login
+│   └── types.ts
+└── pages/
+    ├── index.astro                # home (pública)
+    ├── login.astro / registro.astro
+    ├── tarefas.astro              # missões (protegida)
+    ├── ranking.astro              # ranking (protegida)
+    ├── cadastro-tarefas.astro / cadastro-criancas.astro / cadastro-recompensas.astro
+    ├── recompensas.astro          # recompensas + resgate (protegida)
+    └── notificacoes.astro         # notificações (protegida)
 ```
-
-## 📄 Páginas
-
-- `/` - Página inicial (Hero com features)
-- `/cadastro-tarefas` - Formulário de criação de missões
-- `/tarefas` - Lista de missões ativas
-
-## 🎯 Funcionalidades Implementadas
-
-- ✅ Cadastro de missões temáticas para crianças
-- ✅ Seleção de prioridade (Baixa, Média, Alta)
-- ✅ Seleção de categoria (Escola, Tarefas de Casa, etc.)
-- ✅ Agendamento com data e horário
-- ✅ Design responsivo (Mobile e Desktop)
-- ✅ Acessibilidade (ARIA labels, navegação por teclado)
-- ✅ Paleta de cores consistente
-
-## 🔄 Próximas Etapas
-
-- [ ] Implementar persistência de dados (LocalStorage/Backend)
-- [ ] Sistema de XP e níveis para gamificação
-- [ ] Sistema de notificações para missões
-- [ ] Página da criança (visualização de missões)
-- [ ] Loja de recompensas
-- [ ] Dashboard para pais com relatórios
-
-## 📝 Licença
-
-MIT
 
 ---
 
-💪 **Desenvolvido para transformar responsabilidades em aventuras épicas!**
+## 🧪 Testes
+
+```bash
+npm test           # Vitest (componentes)
+npm run test:e2e   # Playwright (end-to-end)
+```
+
+---
+
+## 🔌 Endpoints consumidos
+
+Ver `src/lib/api.ts`. Os principais: `/api/auth/*`, `/api/children`,
+`/api/tasks` (+ `/complete`), `/api/rewards` (+ `/redeem`), `/api/notifications`.
+Detalhes completos no README do backend.
