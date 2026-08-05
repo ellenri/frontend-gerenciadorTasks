@@ -1,0 +1,126 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Header from '@/components/layout/Header.astro';
+import { getChildren } from '@/lib/api';
+import type { Child } from '@/lib/types';
+
+/**
+ * Página de Ranking — o coração da gamificação.
+ * Mostra as crianças ordenadas por pontos, com avatar, troféu ao líder
+ * e barra de progresso relativa.
+ */
+let children: Child[] = [];
+try {
+  children = await getChildren();
+} catch (error) {
+  console.error('Não foi possível carregar o ranking:', error);
+}
+
+// Ordena por pontos (decrescente). Cópia para não mutar o array original.
+const ranking = [...children].sort((a, b) => b.points - a.points);
+
+// Maior pontuação serve de referência (100%) para as barras. O ",1" evita divisão por zero.
+const maxPoints = ranking.length > 0 ? Math.max(...ranking.map((c) => c.points), 1) : 1;
+
+// Medalha por posição (1º, 2º, 3º com emoji; demais com número).
+const positionIcon = (i: number) => ['🥇', '🥈', '🥉'][i] ?? `${i + 1}º`;
+---
+
+<BaseLayout title="Ranking - Missão Recompensa">
+  <div id="main-content" class="min-h-screen bg-surface">
+    <Header />
+
+    <main class="container mx-auto px-4 py-6 md:py-10 max-w-3xl">
+      <!-- Título -->
+      <div class="text-center mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold text-primary mb-2">🏆 Hall da Fama</h1>
+        <p class="text-gray-600">Quem acumulou mais pontos completando missões?</p>
+      </div>
+
+      {
+        ranking.length === 0 ? (
+          <div class="bg-white rounded-xl shadow-md p-10 text-center">
+            <p class="text-gray-600">Nenhuma criança no ranking ainda.</p>
+          </div>
+        ) : (
+          <div class="space-y-4">
+            {ranking.map((child, index) => {
+              const isLeader = index === 0 && child.points > 0;
+              const pct = Math.round((child.points / maxPoints) * 100);
+              return (
+                <article
+                  class:list={[
+                    'bg-white rounded-2xl shadow-md p-4 md:p-5 flex items-center gap-4 transition-shadow hover:shadow-lg',
+                    { 'ring-2 ring-secondary': isLeader },
+                  ]}
+                >
+                  {/* Posição */}
+                  <div class="text-2xl md:text-3xl w-10 text-center flex-shrink-0">
+                    {positionIcon(index)}
+                  </div>
+
+                  {/* Avatar */}
+                  <div class="w-16 h-16 md:w-20 md:h-20 rounded-full bg-surface flex items-center justify-center overflow-hidden flex-shrink-0 shadow-inner">
+                    {child.avatar ? (
+                      <img src={child.avatar} alt={child.name} class="w-full h-full object-cover" />
+                    ) : (
+                      <span class="text-3xl">🧒</span>
+                    )}
+                  </div>
+
+                  {/* Nome + barra de progresso */}
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-2">
+                      <h3 class="text-lg font-bold text-primary-dark truncate">{child.name}</h3>
+                      <span class="font-bold text-secondary-dark whitespace-nowrap">⭐ {child.points} pts</span>
+                    </div>
+                    <div class="mt-2 h-3 bg-surface-dark rounded-full overflow-hidden">
+                      <div
+                        class="h-full bg-gradient-to-r from-secondary to-action rounded-full transition-all duration-500"
+                        style={`width: ${pct}%`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Troféu para o líder */}
+                  {isLeader && (
+                    <img
+                      src="/trophy.png"
+                      alt="Líder"
+                      class="w-12 h-12 md:w-14 md:h-14 object-contain flex-shrink-0"
+                    />
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        )
+      }
+
+      <!-- CTA -->
+      <div class="mt-8 text-center flex flex-wrap gap-3 justify-center">
+        <a
+          href="/cadastro-tarefas"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-action hover:bg-action-dark text-white font-semibold rounded-lg shadow-md transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Nova Missão
+        </a>
+        <a
+          href="/cadastro-criancas"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-secondary hover:bg-secondary-dark text-white font-semibold rounded-lg shadow-md transition-colors"
+        >
+          🧒 Nova Criança
+        </a>
+      </div>
+    </main>
+
+    <footer class="bg-primary-dark text-white py-6 mt-auto">
+      <div class="container mx-auto px-4 text-center">
+        <p class="text-sm text-surface-light">© 2026 Missão Recompensa - Complete missões, ganhe recompensas!</p>
+      </div>
+    </footer>
+  </div>
+</BaseLayout>

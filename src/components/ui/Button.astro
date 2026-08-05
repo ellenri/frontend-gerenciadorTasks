@@ -1,0 +1,59 @@
+---
+/**
+ * Componente de botão reutilizável
+ * Segue a paleta de cores do design system
+ */
+interface Props {
+  variant?: 'primary' | 'secondary' | 'action' | 'outline' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  type?: 'button' | 'submit' | 'reset';
+  disabled?: boolean;
+  class?: string;
+  ariaLabel?: string;
+}
+
+const {
+  variant = 'primary',
+  size = 'md',
+  type = 'button',
+  disabled = false,
+  class: extraClass = '',
+  ariaLabel,
+} = Astro.props;
+
+// Mapeamento de variantes para classes Tailwind
+const variantClasses = {
+  primary: 'bg-primary hover:bg-primary-dark text-white shadow-md',
+  secondary: 'bg-secondary hover:bg-secondary-dark text-white shadow-md',
+  action: 'bg-action hover:bg-action-dark text-white shadow-md font-semibold',
+  outline: 'bg-transparent border-2 border-primary text-primary hover:bg-primary hover:text-white',
+  ghost: 'bg-transparent text-primary hover:bg-primary/10',
+};
+
+// Mapeamento de tamanhos para classes Tailwind
+const sizeClasses = {
+  sm: 'px-3 py-1.5 text-sm rounded-lg',
+  md: 'px-4 py-2 text-base rounded-lg',
+  lg: 'px-6 py-3 text-lg rounded-xl',
+};
+
+const buttonClass = `
+  ${variantClasses[variant]}
+  ${sizeClasses[size]}
+  ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+  transition-all duration-200
+  font-medium
+  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2
+  disabled:pointer-events-none
+  ${extraClass}
+`.trim();
+---
+
+<button
+  type={type}
+  disabled={disabled}
+  class={buttonClass}
+  aria-label={ariaLabel}
+>
+  <slot />
+</button>

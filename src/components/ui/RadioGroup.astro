@@ -1,0 +1,75 @@
+---
+/**
+ * Componente de grupo de radio buttons
+ * Útil para seleção de prioridade e outras opções
+ */
+interface Props {
+  name: string;
+  label?: string;
+  required?: boolean;
+  options: Array<{ value: string; label: string; description?: string; color?: string }>;
+  class?: string;
+  error?: string;
+}
+
+const {
+  name,
+  label,
+  required = false,
+  options,
+  class: extraClass = '',
+  error,
+} = Astro.props;
+
+const containerClass = `
+  flex flex-col gap-3
+  ${extraClass}
+`.trim();
+---
+
+<div class={containerClass}>
+  {label && (
+    <span class="text-sm font-medium text-primary-dark block mb-1">
+      {label}
+      {required && <span class="text-action ml-1" aria-label="obrigatório">*</span>}
+    </span>
+  )}
+  <div class="flex flex-wrap gap-3" role="radiogroup" aria-required={required}>
+    {options.map((option) => (
+      <label class="relative cursor-pointer group">
+        <input
+          type="radio"
+          name={name}
+          value={option.value}
+          required={required}
+          class="peer sr-only"
+          aria-describedby={option.description ? `${name}-${option.value}-desc` : undefined}
+        />
+        <div
+          class={`
+            px-4 py-2.5 md:px-5 md:py-3
+            rounded-lg border-2
+            transition-all duration-200
+            ${option.color || 'bg-white'}
+            border-primary/30
+            peer-checked:border-action peer-checked:ring-2 peer-checked:ring-action/30
+            hover:border-action
+            ${option.color ? 'text-white' : 'text-primary'}
+          `}
+        >
+          <span class="font-medium text-sm md:text-base">{option.label}</span>
+          {option.description && (
+            <p id={`${name}-${option.value}-desc`} class="text-xs opacity-80 mt-0.5">
+              {option.description}
+            </p>
+          )}
+        </div>
+      </label>
+    ))}
+  </div>
+  {error && (
+    <p class="text-sm text-action font-medium" role="alert">
+      {error}
+    </p>
+  )}
+</div>

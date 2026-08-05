@@ -1,0 +1,319 @@
+---
+/**
+ * Formulário completo para cadastro de tarefas
+ * Responsivo e acessível
+ */
+import { getChildren } from '@/lib/api';
+import { CATEGORY_OPTIONS, PRIORITY_OPTIONS, type Child } from '@/lib/types';
+
+// Buscar crianças da API (resiliente: se a API estiver fora, lista vazia).
+let children: Child[] = [];
+try {
+  children = await getChildren();
+} catch (error) {
+  console.error('Não foi possível carregar as crianças:', error);
+}
+
+// Opções de duração estimada
+const DURATION_OPTIONS = [
+  { value: '15', label: '15 minutos' },
+  { value: '30', label: '30 minutos' },
+  { value: '45', label: '45 minutos' },
+  { value: '60', label: '1 hora' },
+  { value: '90', label: '1h 30min' },
+  { value: '120', label: '2 horas' },
+];
+
+// Data mínima para agendamento (hoje)
+const today = new Date().toISOString().split('T')[0];
+---
+
+<section class="w-full max-w-2xl mx-auto">
+  <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+    <!-- Cabeçalho do Formulário -->
+    <div class="bg-primary px-6 py-5 md:px-8 md:py-6">
+      <h2 class="text-xl md:text-2xl font-bold text-white">Nova Missão</h2>
+      <p class="text-surface-light text-sm md:text-base mt-1">
+        Crie uma nova missão para uma criança completar
+      </p>
+    </div>
+
+    <!-- Formulário -->
+    <form
+      id="taskForm"
+      class="p-6 md:p-8 space-y-6"
+      aria-label="Formulário de cadastro de missão"
+    >
+      <!-- Título da Missão -->
+      <div>
+        <label for="title" class="block text-sm font-medium text-primary-dark mb-1.5">
+          Título da Missão
+          <span class="text-action ml-1" aria-label="obrigatório">*</span>
+        </label>
+        <input
+          type="text"
+          id="title"
+          name="title"
+          required
+          placeholder="Ex: Derrotar o Dragão da Matemática"
+          class="w-full px-4 py-3 rounded-lg border-2 border-primary/30 focus:border-action focus:ring-2 focus:ring-action/20 outline-none transition-all"
+          aria-describedby="titleHelp"
+        />
+        <p id="titleHelp" class="text-sm text-gray-500 mt-1">
+          Um nome épico para a missão
+        </p>
+      </div>
+
+      <!-- Descrição -->
+      <div>
+        <label for="description" class="block text-sm font-medium text-primary-dark mb-1.5">
+          Descrição
+        </label>
+        <textarea
+          id="description"
+          name="description"
+          rows="3"
+          placeholder="Adicione detalhes épicos sobre a missão (opcional)"
+          class="w-full px-4 py-3 rounded-lg border-2 border-primary/30 focus:border-action focus:ring-2 focus:ring-action/20 outline-none transition-all resize-y"
+        ></textarea>
+      </div>
+
+      <!-- Grid 2 colunas: Categoria e Prioridade -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Categoria -->
+        <div>
+          <label for="category" class="block text-sm font-medium text-primary-dark mb-1.5">
+            Categoria
+            <span class="text-action ml-1" aria-label="obrigatório">*</span>
+          </label>
+          <select
+            id="category"
+            name="category"
+            required
+            class="w-full px-4 py-3 rounded-lg border-2 border-primary/30 focus:border-action focus:ring-2 focus:ring-action/20 outline-none transition-all bg-white cursor-pointer"
+          >
+            <option value="" disabled selected>Selecione uma categoria</option>
+            {CATEGORY_OPTIONS.map((cat) => (
+              <option value={cat.value}>{cat.label}</option>
+            ))}
+          </select>
+        </div>
+
+        <!-- Duração Estimada -->
+        <div>
+          <label for="duration" class="block text-sm font-medium text-primary-dark mb-1.5">
+            Duração Estimada
+          </label>
+          <select
+            id="duration"
+            name="duration"
+            class="w-full px-4 py-3 rounded-lg border-2 border-primary/30 focus:border-action focus:ring-2 focus:ring-action/20 outline-none transition-all bg-white cursor-pointer"
+          >
+            <option value="" disabled selected>Estimativa de tempo</option>
+            {DURATION_OPTIONS.map((dur) => (
+              <option value={dur.value}>{dur.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <!-- Prioridade -->
+      <div>
+        <span class="block text-sm font-medium text-primary-dark mb-2">
+          Prioridade
+          <span class="text-action ml-1" aria-label="obrigatório">*</span>
+        </span>
+        <div class="flex flex-wrap gap-3" role="radiogroup" aria-required="true">
+          {PRIORITY_OPTIONS.map((priority) => (
+            <label class="relative cursor-pointer group">
+              <input
+                type="radio"
+                name="priority"
+                value={priority.value}
+                required
+                class="peer sr-only"
+              />
+              <div
+                class={`
+                  px-4 py-2.5 md:px-5 md:py-3
+                  rounded-lg border-2
+                  transition-all duration-200
+                  ${priority.color} text-white
+                  border-primary/20
+                  peer-checked:border-action peer-checked:ring-2 peer-checked:ring-action/30
+                  hover:shadow-md
+                `}
+              >
+                <span class="font-medium text-sm md:text-base">{priority.label}</span>
+              </div>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <!-- Data e Hora -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div>
+          <label for="scheduledDate" class="block text-sm font-medium text-primary-dark mb-1.5">
+            Data
+            <span class="text-action ml-1" aria-label="obrigatório">*</span>
+          </label>
+          <input
+            type="date"
+            id="scheduledDate"
+            name="scheduledDate"
+            required
+            min={today}
+            class="w-full px-4 py-3 rounded-lg border-2 border-primary/30 focus:border-action focus:ring-2 focus:ring-action/20 outline-none transition-all"
+          />
+        </div>
+        <div>
+          <label for="scheduledTime" class="block text-sm font-medium text-primary-dark mb-1.5">
+            Horário
+            <span class="text-action ml-1" aria-label="obrigatório">*</span>
+          </label>
+          <input
+            type="time"
+            id="scheduledTime"
+            name="scheduledTime"
+            required
+            class="w-full px-4 py-3 rounded-lg border-2 border-primary/30 focus:border-action focus:ring-2 focus:ring-action/20 outline-none transition-all"
+          />
+        </div>
+      </div>
+
+      <!-- Seleção de Criança -->
+      <div>
+        <span class="block text-sm font-medium text-primary-dark mb-2">
+          Atribuir à Criança
+          <span class="text-action ml-1" aria-label="obrigatório">*</span>
+        </span>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3" role="radiogroup">
+          {children.map((child, index) => {
+            const avatarColors = ['bg-primary', 'bg-secondary', 'bg-action', 'bg-highlight'];
+            const getInitials = (fullName: string) => {
+              const parts = fullName.trim().split(' ');
+              if (parts.length >= 2) {
+                return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+              }
+              return fullName.slice(0, 2).toUpperCase();
+            };
+
+            return (
+              <label class="relative cursor-pointer group">
+                <input type="radio" name="assignedTo" value={child.id} required class="peer sr-only" />
+                <div
+                  class={`
+                    flex flex-col items-center gap-2 p-3 md:p-4
+                    rounded-xl border-2
+                    transition-all duration-200
+                    bg-white border-primary/20
+                    peer-checked:border-action peer-checked:ring-2 peer-checked:ring-action/30
+                    peer-checked:bg-surface/30
+                    hover:border-action hover:shadow-md
+                  `}
+                >
+                  <div
+                    class:list={[
+                      'w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden flex items-center justify-center text-white font-bold text-lg shadow-md',
+                      !child.avatar && avatarColors[index % avatarColors.length],
+                    ]}
+                    aria-hidden="true"
+                  >
+                    {child.avatar ? (
+                      <img src={child.avatar} alt={child.name} class="w-full h-full object-cover" />
+                    ) : (
+                      <span>{getInitials(child.name)}</span>
+                    )}
+                  </div>
+                  <span class="text-sm font-medium text-primary text-center truncate w-full">
+                    {child.name}
+                  </span>
+                </div>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
+      <!-- Ações do Formulário -->
+      <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-primary/10">
+        <button
+          type="submit"
+          class="flex-1 px-6 py-3 bg-action hover:bg-action-dark text-white font-semibold rounded-lg shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-action focus:ring-offset-2"
+        >
+          <span class="flex items-center justify-center gap-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+              stroke="currentColor"
+              class="w-5 h-5"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 4.5v15m7.5-7.5h-15"
+              />
+            </svg>
+            Criar Missão
+          </span>
+        </button>
+        <button
+          type="reset"
+          class="px-6 py-3 bg-secondary hover:bg-secondary-dark text-white font-medium rounded-lg shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2"
+        >
+          Limpar
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Feedback do envio (preenchido pelo script abaixo) -->
+  <div id="formFeedback" class="hidden" role="status" aria-live="polite"></div>
+
+  <!-- Script de manipulação do formulário (client-side) -->
+  <script>
+    import { createTask, ApiError } from '../../lib/api';
+    import type { TaskFormData } from '../../lib/types';
+
+    const form = document.getElementById('taskForm') as HTMLFormElement | null;
+    const feedback = document.getElementById('formFeedback');
+
+    form?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!form.checkValidity()) return; // deixa o navegador validar os 'required'
+
+      // FormData captura todos os campos nomeados do formulário.
+      const data = Object.fromEntries(new FormData(form).entries());
+      const submitButton = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+      if (submitButton) submitButton.disabled = true; // evita duplo clique
+
+      try {
+        await createTask(data as unknown as TaskFormData);
+        showFeedback('success', 'Missão criada com sucesso! 🎉 Veja em “Missões”.');
+        form.reset();
+      } catch (error) {
+        // ApiError traz a mensagem da regra de negócio (ex: data no passado).
+        const message = error instanceof ApiError
+          ? error.message
+          : 'Não foi possível criar a missão. Tente novamente.';
+        showFeedback('error', message);
+      } finally {
+        if (submitButton) submitButton.disabled = false;
+      }
+    });
+
+    function showFeedback(type: 'success' | 'error', message: string) {
+      if (!feedback) return;
+      feedback.textContent = message;
+      feedback.className = 'mt-4 p-4 rounded-lg border text-sm font-medium ' +
+        (type === 'success'
+          ? 'bg-highlight/30 border-highlight text-primary-dark'
+          : 'bg-action/20 border-action text-action-dark');
+      feedback.classList.remove('hidden');
+      feedback.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    }
+  </script>
+</section>

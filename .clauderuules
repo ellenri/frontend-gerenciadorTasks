@@ -1,0 +1,92 @@
+Regras do Projeto Frontend (Astro + Tailwind + Testes)
+1. Visão Geral do Projeto
+Este é um projeto estritamente Frontend utilizando o framework Astro. O foco é performance, SEO e uma arquitetura de componentes maintainable. O design deve ser limpo, moderno e estritamente seguir a paleta de cores definida.
+
+2. Paleta de Cores (Design System)
+Todas as cores devem ser importadas das variáveis CSS ou configuração do Tailwind. NÃO use cores hardcoded (ex: #fff).
+
+Mapeamento Semântico das Cores (Missão Recompensa)
+Utilize as seguintes associações para garantir consistência:
+
+Primary (Cor Principal): #6C8AE5 (Azul Suave) - Use para cabeçalhos, navegação e elementos primários.
+Surface (Fundo/Papel): #F9F1EC (Bege Claro/Off-white) - Use para backgrounds de seções, cards e corpo da página.
+Highlight (Destaque): #B5F966 (Verde Limão) - Use para detalhes, ícones de destaque e hover states sutis.
+Action / CTA (Ação): #D171EA (Roxo Vibrante) - Use para botões principais, alertas e elementos que requerem atenção imediata.
+Secondary (Secundário): #F7B53B (Laranja Dourado) - Use para tags, badges ou informações secundárias.
+Dark (Escuro): #4C4C5F (Cinza Arroxeado) - Use para textos e elementos que precisam de contraste.
+
+Configuração (Sugestão para Tailwind)
+Se usar Tailwind, mapeie no tailwind.config.mjs:
+
+theme: {
+  extend: {
+    colors: {
+      primary: '#6C8AE5',
+      surface: '#F9F1EC',
+      highlight: '#B5F966',
+      action: '#D171EA',
+      secondary: '#F7B53B',
+      dark: '#4C4C5F',
+    }
+  }
+}
+3. Stack Tecnológica e Padrões
+Framework: Astro (Islands Architecture para componentes interativos).
+Linguagem: TypeScript (Obrigatório tipagem em todas as funções e componentes).
+Estilização:
+Preferir Tailwind CSS para utilitários e consistência.
+Alternativamente, usar CSS Modules (.module.css) para componentes isolados.
+Componentes:
+Utilizar Preact, React ou Svelte (escolha uma) apenas para ilhas interativas.
+Componentes Astro (.astro) para conteúdo estático.
+4. Arquitetura de Código
+Estrutura de Pastas
+Siga esta estrutura padrão:
+
+src/
+├── components/
+│   ├── ui/       (Botões, Inputs, Cards - Reutilizáveis)
+│   └── layout/   (Header, Footer, Sidebar)
+├── layouts/
+├── pages/
+├── styles/       (Variáveis globais, reset)
+└── lib/          (Utilitários, tipos TS)
+Boas Práticas de Desenvolvimento
+Componentização: Quebre o código em componentes pequenos e reutilizáveis.
+Tipagem: Use interface para props dos componentes. Evite any.
+Acessibilidade (a11y):
+Sempre use tags semânticas (nav, main, section, article).
+Botões devem ter texto acessível ou aria-label.
+Cores devem ter contraste suficiente (verificar se #F9F1EC no fundo permite leitura de texto).
+Responsividade: Mobile-first. O design deve funcionar perfeitamente em 320px até 1440px+.
+SEO: Use as tags <Meta /> do Astro em todas as páginas.
+5. Tabelas e Diagramas
+Seguindo o arquivo original, ao renderizar tabelas ou listas de dados:
+
+Use a cor Primary (#6C8AE5) para cabeçalhos (th).
+Use zebra-listing (linhas alternadas) usando Surface (#F9F1EC) e branco/transparente.
+Use a cor Action (#D171EA) para destacar status críticos ou ações de edição/exclusão.
+6. Integração de Testes (Obrigatório)
+O projeto deve incluir testes para garantir qualidade.
+
+Ferramentas
+Testes Unitários/Integração: Vitest (padrão para Astro/Vite).
+Testes E2E: Playwright.
+Testes de Componentes: Testing Library (junto com Vitest).
+Regras de Testagem
+Cobertura: Toda lógica de UI dentro de componentes interativos deve ter testes.
+Componentes UI: Teste renderização, clicks e mudanças de props.
+Acessibilidade: Verifique se há erros de a11y nos testes sempre que possível.
+Comandos de Teste (Exemplo)
+Ao adicionar um novo componente, gere também o teste correspondente:
+Teste unitário: src/components/ui/Button.test.ts
+Teste E2E: e2e/home-page.spec.ts
+
+7. Diretivas para o Assistente de Código (Claude)
+Ao escrever código para este projeto:
+
+NÃO gere código backend (APIs, Database). Use apenas dados mockados ou APIs públicas.
+SEMPRE importe as cores do tema configurado, nunca hardcode hex.
+SEMPRE crie interfaces TypeScript para as props dos componentes.
+SEMPRE verifique se o componente é responsivo.
+Ao sugerir mudanças, SEMPRE considere o impacto nos testes.

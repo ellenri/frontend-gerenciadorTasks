@@ -1,0 +1,63 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Header from '@/components/layout/Header.astro';
+import TaskForm from '@/components/ui/TaskForm.astro';
+---
+
+<BaseLayout title="Cadastrar Missão - Missão Recompensa">
+  <div id="main-content" class="min-h-screen bg-surface">
+    <Header />
+
+    <main class="container mx-auto px-4 py-6 md:py-10">
+      <!-- Breadcrumb -->
+      <nav class="mb-6" aria-label="Navegação de migalhas">
+        <ol class="flex items-center gap-2 text-sm">
+          <li>
+            <a href="/" class="text-primary hover:text-primary-dark transition-colors">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                stroke="currentColor"
+                class="w-4 h-4"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
+                />
+              </svg>
+            </a>
+          </li>
+          <li class="text-primary/60" aria-hidden="true">/</li>
+          <li class="text-primary/60">Missões</li>
+          <li class="text-primary/60" aria-hidden="true">/</li>
+          <li class="text-primary font-medium" aria-current="page">Nova Missão</li>
+        </ol>
+      </nav>
+
+      <!-- Título da Página -->
+      <div class="mb-6 md:mb-8">
+        <h1 class="text-2xl md:text-3xl font-bold text-primary mb-2">
+          Nova Missão
+        </h1>
+        <p class="text-gray-600 text-sm md:text-base">
+          Crie uma nova missão para uma criança completar e ganhar recompensas!
+        </p>
+      </div>
+
+      <!-- Formulário de Tarefa -->
+      <TaskForm />
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-primary-dark text-white py-6 mt-auto">
+      <div class="container mx-auto px-4 text-center">
+        <p class="text-sm text-surface-light">
+          © 2026 Missão Recompensa - Complete missões, ganhe recompensas!
+        </p>
+      </div>
+    </footer>
+  </div>
+</BaseLayout>

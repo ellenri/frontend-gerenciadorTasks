@@ -1,0 +1,100 @@
+---
+/**
+ * Componente para seleção visual de criança
+ * Exibe cards com avatares para cada criança disponível
+ */
+import type { Child } from '@/lib/types';
+
+interface Props {
+  name: string;
+  label?: string;
+  children: Child[];
+  required?: boolean;
+  error?: string;
+}
+
+const { name, label, children, required = false, error } = Astro.props;
+
+// Função para gerar iniciais do nome
+const getInitials = (fullName: string) => {
+  const parts = fullName.trim().split(' ');
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return fullName.slice(0, 2).toUpperCase();
+};
+
+// Cores de fundo para os avatares (variações da paleta)
+const avatarColors = ['bg-primary', 'bg-secondary', 'bg-action', 'bg-highlight'];
+---
+
+<div class="flex flex-col gap-3">
+  {label && (
+    <span class="text-sm font-medium text-primary-dark">
+      {label}
+      {required && <span class="text-action ml-1" aria-label="obrigatório">*</span>}
+    </span>
+  )}
+  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3" role="radiogroup">
+    {children.map((child, index) => (
+      <label class="relative cursor-pointer group">
+        <input
+          type="radio"
+          name={name}
+          value={child.id}
+          required={required}
+          class="peer sr-only"
+        />
+        <div
+          class={`
+            flex flex-col items-center gap-2 p-3 md:p-4
+            rounded-xl border-2
+            transition-all duration-200
+            bg-white border-primary/20
+            peer-checked:border-action peer-checked:ring-2 peer-checked:ring-action/30
+            peer-checked:bg-surface/30
+            hover:border-action hover:shadow-md
+          `}
+        >
+          <!-- Avatar -->
+          <div
+            class={`
+              w-12 h-12 md:w-14 md:h-14
+              rounded-full
+              ${avatarColors[index % avatarColors.length]}
+              flex items-center justify-center
+              text-white font-bold text-lg md:text-xl
+              shadow-md
+            `}
+            aria-hidden="true"
+          >
+            {child.avatar ? (
+              <img src={child.avatar} alt={child.name} class="w-full h-full rounded-full object-cover" />
+            ) : (
+              <span>{getInitials(child.name)}</span>
+            )}
+          </div>
+          <!-- Nome -->
+          <span class="text-sm font-medium text-primary text-center truncate w-full">
+            {child.name}
+          </span>
+        </div>
+      </label>
+    ))}
+  </div>
+  {error && (
+    <p class="text-sm text-action font-medium" role="alert">
+      {error}
+    </p>
+  )}
+</div>
+
+<style>
+  input:checked + div {
+    transform: scale(1.02);
+  }
+
+  label:hover input:not(:checked) + div {
+    transform: translateY(-2px);
+  }
+</style>

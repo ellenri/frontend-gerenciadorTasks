@@ -1,0 +1,92 @@
+---
+/**
+ * Componente de cabeçalho principal da aplicação
+ * Responsivo para desktop e mobile
+ */
+---
+
+<header class="bg-primary text-white shadow-lg">
+  <nav class="container mx-auto px-4 py-3" aria-label="Navegação principal">
+    <div class="flex items-center justify-between">
+      <!-- Logo/Título -->
+      <div class="flex items-center gap-3">
+        <div
+          class="w-10 h-10 md:w-12 md:h-12 bg-highlight rounded-full flex items-center justify-center"
+          aria-hidden="true"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+            class="w-6 h-6 md:w-7 md:h-7 text-primary"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl md:text-2xl font-bold">Missão Recompensa</h1>
+          <p class="text-xs md:text-sm text-surface-light hidden sm:block">
+            Complete missões, ganhe recompensas!
+          </p>
+        </div>
+      </div>
+
+      <!-- Links de Navegação -->
+      <ul class="flex items-center gap-2 md:gap-4">
+        <li>
+          <a
+            href="/"
+            class="px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-primary-dark transition-colors text-sm md:text-base font-medium"
+          >
+            Início
+          </a>
+        </li>
+        <li>
+          <a
+            href="/cadastro-tarefas"
+            class="px-3 py-2 md:px-4 md:py-2 rounded-lg bg-action hover:bg-action-dark transition-colors text-sm md:text-base font-medium"
+          >
+            Nova Missão
+          </a>
+        </li>
+        <li>
+          <a
+            href="/tarefas"
+            class="px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-primary-dark transition-colors text-sm md:text-base font-medium"
+          >
+            Missões
+          </a>
+        </li>
+        <li>
+          <a
+            href="/ranking"
+            class="px-3 py-2 md:px-4 md:py-2 rounded-lg bg-highlight hover:bg-highlight-dark text-primary transition-colors text-sm md:text-base font-medium"
+          >
+            🏆 Ranking
+          </a>
+        </li>
+        <li>
+          <a
+            href="/cadastro-criancas"
+            class="px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-primary-dark transition-colors text-sm md:text-base font-medium"
+          >
+            + Criança
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<style>
+  /* Animação suave para hover */
+  a {
+    transition: background-color 0.2s ease-in-out;
+  }
+</style>
