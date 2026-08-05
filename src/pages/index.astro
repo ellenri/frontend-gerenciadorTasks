@@ -2,11 +2,16 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Header from '@/components/layout/Header.astro';
 import geminiImage from '@/assets/girl_trophy-removebg-preview.png';
+import { getSession } from '@/lib/auth';
+
+// Sessão opcional: a home é pública, mas o cabeçalho mostra Entrar/Sair.
+const session = await getSession(Astro);
+const user = session?.user ?? null;
 ---
 
 <BaseLayout title="Missão Recompensa - Início">
   <div id="main-content" class="min-h-screen bg-surface">
-    <Header />
+    <Header user={user} />
 
     <main class="container mx-auto px-4 py-8 md:py-16">
       <!-- Hero Section -->

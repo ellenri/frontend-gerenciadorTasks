@@ -1,20 +1,26 @@
 /**
  * Camada de acesso à API REST do backend (.NET).
  *
- * Centraliza TODA a comunicação com o servidor em um único arquivo:
- * se a URL base ou o formato mudar, alteramos aqui (DRY).
- *
- * Conceitos:
- * - apiFetch: helper genérico que executa o fetch e TRADUZ respostas de erro
- *   (ProblemDetails do .NET) em exceções JS com mensagem legível.
- * - ApiError: erro tipado para distinguir "falha de regra de negócio" (ex: 400)
- *   de erros de rede/programação, permitindo feedback adequado na UI.
+ * SSR-aware: no servidor (frontmatter das páginas) usamos a URL absoluta e
+ * repassamos o cookie do navegador manualmente (o fetch do Node não envia
+ * cookies do browser). No cliente usamos caminho relativo + proxy do Vite,
+ * assim tudo fica same-origin e o cookie de auth funciona sem problema de
+ * SameSite cross-origin.
  */
-import type { Child, CreateChildRequest, Task, TaskFormData } from './types';
+import type {
+  AuthUser,
+  Child,
+  CreateChildRequest,
+  LoginRequest,
+  RegisterRequest,
+  Task,
+  TaskFormData,
+} from './types';
 
-// URL base do backend. PUBLIC_* é exposta ao navegador pelo Astro.
-// O fallback torna o projeto funcional sem configurar nada em dev.
-const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:5104';
+const API_BASE =
+  import.meta.env.PUBLIC_API_BASE ??
+  // SSR (Node) precisa de URL absoluta; cliente usa relativo (proxy do Vite).
+  (import.meta.env.SSR ? 'http://localhost:5104' : '');
 
 /** Erro de API com status HTTP, para tratamento diferenciado na UI. */
 export class ApiError extends Error {
@@ -24,62 +30,99 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * Executa uma requisição e devolve o JSON tipado, ou lança ApiError.
- * O 'T' genérico permite reusar o mesmo helper para qualquer endpoint.
- */
-async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+interface FetchOptions extends RequestInit {
+  /** Cabeçalho Cookie a repassar no SSR (Node não envia cookies do browser). */
+  cookie?: string;
+}
+
+async function apiFetch<T>(path: string, init: FetchOptions = {}): Promise<T> {
+  const { cookie, headers, ...rest } = init;
   const response = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(cookie ? { Cookie: cookie } : {}),
+      ...headers,
+    },
+    credentials: 'include',
+    ...rest,
   });
 
   if (!response.ok) {
-    // Tenta extrair a mensagem do ProblemDetails (RFC 7807) que o .NET devolve.
+    // Cliente: se não autenticado e não estamos em login/registro, manda pro login.
+    if (
+      response.status === 401 &&
+      !import.meta.env.SSR &&
+      typeof location !== 'undefined' &&
+      !location.pathname.startsWith('/login') &&
+      !location.pathname.startsWith('/registro')
+    ) {
+      location.href = '/login';
+    }
+
     let message = `Erro ${response.status} ao chamar ${path}`;
     try {
       const body = await response.json();
-      // O DomainExceptionHandler preenche 'detail' com a mensagem da regra.
       if (body?.detail) message = body.detail;
       else if (body?.title) message = body.title;
+      else if (body?.message) message = body.message;
     } catch {
-      // resposta sem corpo JSON — mantém a mensagem padrão
+      // resposta sem corpo JSON
     }
     throw new ApiError(message, response.status);
   }
 
-  // 204 No Content não tem corpo.
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }
 
 /** GET /api/children — lista todas as crianças. */
-export async function getChildren(): Promise<Child[]> {
-  return apiFetch<Child[]>('/api/children');
+export async function getChildren(cookie = ''): Promise<Child[]> {
+  return apiFetch<Child[]>('/api/children', { cookie });
 }
 
 /** GET /api/tasks — lista todas as missões. */
-export async function getTasks(): Promise<Task[]> {
-  return apiFetch<Task[]>('/api/tasks');
+export async function getTasks(cookie = ''): Promise<Task[]> {
+  return apiFetch<Task[]>('/api/tasks', { cookie });
 }
 
 /** POST /api/tasks — cria uma missão a partir dos dados do formulário. */
-export async function createTask(data: TaskFormData): Promise<Task> {
-  return apiFetch<Task>('/api/tasks', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+export async function createTask(data: TaskFormData, cookie = ''): Promise<Task> {
+  return apiFetch<Task>('/api/tasks', { method: 'POST', body: JSON.stringify(data), cookie });
 }
 
 /** POST /api/tasks/{id}/complete — conclui a missão (credita pontos à criança). */
-export async function completeTask(id: string): Promise<Task> {
-  return apiFetch<Task>(`/api/tasks/${id}/complete`, { method: 'POST' });
+export async function completeTask(id: string, cookie = ''): Promise<Task> {
+  return apiFetch<Task>(`/api/tasks/${id}/complete`, { method: 'POST', cookie });
 }
 
 /** POST /api/children — cadastra uma nova criança (com avatar escolhido). */
-export async function createChild(data: CreateChildRequest): Promise<Child> {
-  return apiFetch<Child>('/api/children', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+export async function createChild(data: CreateChildRequest, cookie = ''): Promise<Child> {
+  return apiFetch<Child>('/api/children', { method: 'POST', body: JSON.stringify(data), cookie });
+}
+
+// ============================== Autenticação ==============================
+
+/** POST /api/auth/login — autentica (o servidor emite o cookie HttpOnly). */
+export async function login(data: LoginRequest): Promise<AuthUser> {
+  return apiFetch<AuthUser>('/api/auth/login', { method: 'POST', body: JSON.stringify(data) });
+}
+
+/** POST /api/auth/register — cadastra um responsável e já o autentica. */
+export async function register(data: RegisterRequest): Promise<AuthUser> {
+  return apiFetch<AuthUser>('/api/auth/register', { method: 'POST', body: JSON.stringify(data) });
+}
+
+/** POST /api/auth/logout — encerra a sessão. */
+export async function logout(): Promise<void> {
+  await apiFetch<void>('/api/auth/logout', { method: 'POST' });
+}
+
+/** GET /api/auth/me — usuário atual (null se anônimo). */
+export async function getCurrentUser(cookie = ''): Promise<AuthUser | null> {
+  try {
+    return await apiFetch<AuthUser>('/api/auth/me', { cookie });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) return null;
+    throw error;
+  }
 }

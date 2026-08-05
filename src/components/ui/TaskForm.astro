@@ -9,7 +9,7 @@ import { CATEGORY_OPTIONS, PRIORITY_OPTIONS, type Child } from '@/lib/types';
 // Buscar crianças da API (resiliente: se a API estiver fora, lista vazia).
 let children: Child[] = [];
 try {
-  children = await getChildren();
+  children = await getChildren(Astro.request.headers.get('cookie') ?? '');
 } catch (error) {
   console.error('Não foi possível carregar as crianças:', error);
 }

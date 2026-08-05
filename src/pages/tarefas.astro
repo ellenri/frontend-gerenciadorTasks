@@ -2,6 +2,7 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Header from '@/components/layout/Header.astro';
 import { getTasks } from '@/lib/api';
+import { getSession } from '@/lib/auth';
 import {
   CATEGORY_OPTIONS,
   PRIORITY_OPTIONS,
@@ -16,9 +17,13 @@ import {
  * try/catch: se a API estiver fora (ex: build sem backend), mostra estado vazio
  * em vez de quebrar a página.
  */
+const session = await getSession(Astro);
+if (!session) return Astro.redirect('/login');
+const { user, cookie } = session;
+
 let tasks: Task[] = [];
 try {
-  tasks = await getTasks();
+  tasks = await getTasks(cookie);
 } catch (error) {
   console.error('Não foi possível carregar as missões:', error);
 }
@@ -46,7 +51,7 @@ const formatDate = (iso: string) => {
 
 <BaseLayout title="Missões - Missão Recompensa">
   <div id="main-content" class="min-h-screen bg-surface">
-    <Header />
+    <Header user={user} />
 
     <main class="container mx-auto px-4 py-6 md:py-10">
       <!-- Título -->

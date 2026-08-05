@@ -2,6 +2,7 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Header from '@/components/layout/Header.astro';
 import { getChildren } from '@/lib/api';
+import { getSession } from '@/lib/auth';
 import type { Child } from '@/lib/types';
 
 /**
@@ -9,9 +10,13 @@ import type { Child } from '@/lib/types';
  * Mostra as crianças ordenadas por pontos, com avatar, troféu ao líder
  * e barra de progresso relativa.
  */
+const session = await getSession(Astro);
+if (!session) return Astro.redirect('/login');
+const { user, cookie } = session;
+
 let children: Child[] = [];
 try {
-  children = await getChildren();
+  children = await getChildren(cookie);
 } catch (error) {
   console.error('Não foi possível carregar o ranking:', error);
 }
@@ -28,7 +33,7 @@ const positionIcon = (i: number) => ['🥇', '🥈', '🥉'][i] ?? `${i + 1}º`;
 
 <BaseLayout title="Ranking - Missão Recompensa">
   <div id="main-content" class="min-h-screen bg-surface">
-    <Header />
+    <Header user={user} />
 
     <main class="container mx-auto px-4 py-6 md:py-10 max-w-3xl">
       <!-- Título -->

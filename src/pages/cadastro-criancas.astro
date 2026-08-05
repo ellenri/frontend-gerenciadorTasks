@@ -2,6 +2,12 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Header from '@/components/layout/Header.astro';
 import { AVATAR_OPTIONS } from '@/lib/types';
+import { getSession } from '@/lib/auth';
+
+// Exige login (cadastrar criança é uma ação autenticada).
+const session = await getSession(Astro);
+if (!session) return Astro.redirect('/login');
+const { user } = session;
 
 // Data máxima = hoje (não aceita data futura). Igual à validação do domínio.
 const today = new Date().toISOString().split('T')[0];
@@ -9,7 +15,7 @@ const today = new Date().toISOString().split('T')[0];
 
 <BaseLayout title="Nova Criança - Missão Recompensa">
   <div id="main-content" class="min-h-screen bg-surface">
-    <Header />
+    <Header user={user} />
 
     <main class="container mx-auto px-4 py-6 md:py-10 max-w-2xl">
       <!-- Migalha -->

@@ -112,3 +112,24 @@ export const AVATAR_OPTIONS: string[] = [
   '/avatars/girl_blackskin.png',
   '/avatars/girl_glasses.png',
 ];
+
+/** Usuário autenticado (responsável). */
+export interface AuthUser {
+  id: string;
+  fullName: string;
+  email: string;
+  role: string;
+}
+
+/** Payload de login. */
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+/** Payload de cadastro de responsável. */
+export interface RegisterRequest {
+  fullName: string;
+  email: string;
+  password: string;
+}

@@ -1,8 +1,14 @@
 ---
 /**
- * Componente de cabeçalho principal da aplicação
- * Responsivo para desktop e mobile
+ * Cabeçalho principal da aplicação (responsivo).
+ * Recebe o usuário autenticado (se houver) para mostrar "Olá, {nome}" + Sair,
+ * ou um link "Entrar".
  */
+interface Props {
+  user?: { fullName: string } | null;
+}
+
+const { user = null } = Astro.props;
 ---
 
 <header class="bg-primary text-white shadow-lg">
@@ -37,7 +43,7 @@
         </div>
       </div>
 
-      <!-- Links de Navegação -->
+      <!-- Links de Navegação + Área do usuário -->
       <ul class="flex items-center gap-2 md:gap-4">
         <li>
           <a
@@ -79,14 +85,62 @@
             + Criança
           </a>
         </li>
+
+        <!-- Usuário: logado mostra Sair; anônimo mostra Entrar -->
+        <li
+          class:list={[
+            'flex items-center gap-2 ml-1 pl-2 md:pl-3',
+            { 'border-l border-white/30': true },
+          ]}
+        >
+          {
+            user ? (
+              <>
+                <span class="hidden md:inline text-sm text-surface-light truncate max-w-[10rem]">
+                  Olá, {user.fullName}
+                </span>
+                <button
+                  id="logout-btn"
+                  type="button"
+                  class="px-3 py-2 rounded-lg bg-action hover:bg-action-dark text-sm font-medium transition-colors"
+                >
+                  Sair
+                </button>
+              </>
+            ) : (
+              <a
+                href="/login"
+                class="px-3 py-2 rounded-lg bg-action hover:bg-action-dark text-sm font-medium transition-colors"
+              >
+                Entrar
+              </a>
+            )
+          }
+        </li>
       </ul>
     </div>
   </nav>
 </header>
 
+<script>
+  import { logout } from '../../lib/api';
+
+  const btn = document.getElementById('logout-btn');
+  btn?.addEventListener('click', async () => {
+    btn.setAttribute('disabled', 'true');
+    btn.textContent = 'Saindo...';
+    try {
+      await logout();
+    } catch {
+      // mesmo com erro, volta para o login
+    }
+    window.location.href = '/login';
+  });
+</script>
+
 <style>
-  /* Animação suave para hover */
-  a {
+  a,
+  button {
     transition: background-color 0.2s ease-in-out;
   }
 </style>
