@@ -1,0 +1,91 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Header from '@/components/layout/Header.astro';
+import { getNotifications } from '@/lib/api';
+import { getSession } from '@/lib/auth';
+import type { NotificationItem } from '@/lib/types';
+
+const session = await getSession(Astro);
+if (!session) return Astro.redirect('/login');
+const { user, cookie } = session;
+
+let notifications: NotificationItem[] = [];
+try {
+  notifications = await getNotifications(cookie);
+} catch (error) {
+  console.error('Não foi possível carregar as notificações:', error);
+}
+---
+
+<BaseLayout title="Notificações - Missão Recompensa">
+  <div id="main-content" class="min-h-screen bg-surface">
+    <Header user={user} />
+
+    <main class="container mx-auto px-4 py-6 md:py-10 max-w-3xl">
+      <div class="mb-6">
+        <h1 class="text-2xl md:text-3xl font-bold text-primary mb-1">🔔 Notificações</h1>
+        <p class="text-gray-600 text-sm md:text-base">Avisos sobre missões e recompensas</p>
+      </div>
+
+      {
+        notifications.length === 0 ? (
+          <div class="bg-white rounded-xl shadow-md p-8 text-center text-gray-600">
+            Sem notificações por enquanto.
+          </div>
+        ) : (
+          <ul class="space-y-3" aria-label="Lista de notificações">
+            {notifications.map((n) => (
+              <li
+                class:list={[
+                  'bg-white rounded-xl shadow-md p-4 flex items-center gap-3',
+                  { 'bg-highlight/20': !n.isRead },
+                ]}
+              >
+                <span class="text-xl" aria-hidden="true">🔔</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm text-gray-800">{n.message}</p>
+                  <p class="text-xs text-gray-500 mt-1">
+                    {new Date(n.createdAt).toLocaleString('pt-BR')}
+                  </p>
+                </div>
+                {!n.isRead && (
+                  <button
+                    type="button"
+                    class="marcar-btn text-xs px-3 py-1 rounded-lg bg-primary text-white hover:bg-primary-dark transition-colors whitespace-nowrap"
+                    data-id={n.id}
+                  >
+                    Marcar lida
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </main>
+
+    <footer class="bg-primary-dark text-white py-6 mt-auto">
+      <div class="container mx-auto px-4 text-center">
+        <p class="text-sm text-surface-light">© 2026 Missão Recompensa</p>
+      </div>
+    </footer>
+  </div>
+</BaseLayout>
+
+<script>
+  import { markNotificationRead, ApiError } from '../lib/api';
+
+  document.querySelectorAll<HTMLButtonElement>('.marcar-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      if (!id) return;
+      try {
+        await markNotificationRead(id);
+        window.location.reload();
+      } catch (error) {
+        const message = error instanceof ApiError ? error.message : 'Não foi possível atualizar.';
+        alert(message);
+      }
+    });
+  });
+</script>

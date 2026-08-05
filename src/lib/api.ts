@@ -13,6 +13,7 @@ import type {
   CreateChildRequest,
   CreateRewardRequest,
   LoginRequest,
+  NotificationItem,
   RegisterRequest,
   Reward,
   Task,
@@ -121,6 +122,24 @@ export async function redeemReward(id: string, childId: string, cookie = ''): Pr
     body: JSON.stringify({ childId }),
     cookie,
   });
+}
+
+// ============================== Notificações ==============================
+
+/** GET /api/notifications — lista as notificações do usuário logado. */
+export async function getNotifications(cookie = ''): Promise<NotificationItem[]> {
+  return apiFetch<NotificationItem[]>('/api/notifications', { cookie });
+}
+
+/** GET /api/notifications/unread-count — total de não-lidas (para o sininho). */
+export async function getUnreadNotificationCount(cookie = ''): Promise<number> {
+  const data = await apiFetch<{ count: number }>('/api/notifications/unread-count', { cookie });
+  return data.count;
+}
+
+/** POST /api/notifications/{id}/read — marca como lida. */
+export async function markNotificationRead(id: string, cookie = ''): Promise<void> {
+  await apiFetch<void>(`/api/notifications/${id}/read`, { method: 'POST', cookie });
 }
 
 // ============================== Autenticação ==============================

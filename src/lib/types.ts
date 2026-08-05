@@ -152,3 +152,13 @@ export interface CreateRewardRequest {
   description: string;
   requiredPoints: number;
 }
+
+/** Notificação do usuário (aviso de missão/recompensa). */
+export interface NotificationItem {
+  id: string;
+  message: string;
+  type: string;
+  isRead: boolean;
+  readAt?: string | null;
+  createdAt: string;
+}
