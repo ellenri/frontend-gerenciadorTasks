@@ -1,0 +1,138 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Header from '@/components/layout/Header.astro';
+import { getSession } from '@/lib/auth';
+
+const session = await getSession(Astro);
+if (!session) return Astro.redirect('/login');
+const { user } = session;
+---
+
+<BaseLayout title="Nova Recompensa - Missão Recompensa">
+  <div id="main-content" class="min-h-screen bg-surface">
+    <Header user={user} />
+
+    <main class="container mx-auto px-4 py-6 md:py-10 max-w-2xl">
+      <div class="mb-6">
+        <a href="/recompensas" class="text-sm text-primary hover:underline">← Voltar para recompensas</a>
+        <h1 class="text-2xl md:text-3xl font-bold text-primary mt-2 mb-1">Nova Recompensa</h1>
+        <p class="text-gray-600 text-sm md:text-base">Crie um prêmio que as crianças podem resgatar com pontos.</p>
+      </div>
+
+      <section class="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div class="bg-primary px-6 py-5">
+          <h2 class="text-xl font-bold text-white">Dados da Recompensa</h2>
+        </div>
+
+        <form id="rewardForm" class="p-6 md:p-8 space-y-6">
+          <div>
+            <label for="title" class="block text-sm font-medium text-primary-dark mb-1.5">
+              Título <span class="text-action">*</span>
+            </label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              required
+              placeholder="Ex: 30 min de videogame"
+              class="w-full px-4 py-3 rounded-lg border-2 border-primary/30 focus:border-action focus:ring-2 focus:ring-action/20 outline-none transition-all"
+            />
+          </div>
+
+          <div>
+            <label for="description" class="block text-sm font-medium text-primary-dark mb-1.5">Descrição</label>
+            <textarea
+              id="description"
+              name="description"
+              rows="3"
+              placeholder="Detalhes do prêmio (opcional)"
+              class="w-full px-4 py-3 rounded-lg border-2 border-primary/30 focus:border-action focus:ring-2 focus:ring-action/20 outline-none transition-all resize-y"
+            ></textarea>
+          </div>
+
+          <div>
+            <label for="requiredPoints" class="block text-sm font-medium text-primary-dark mb-1.5">
+              Pontos necessários <span class="text-action">*</span>
+            </label>
+            <input
+              type="number"
+              id="requiredPoints"
+              name="requiredPoints"
+              required
+              min="1"
+              placeholder="Ex: 50"
+              class="w-full px-4 py-3 rounded-lg border-2 border-primary/30 focus:border-action focus:ring-2 focus:ring-action/20 outline-none transition-all"
+            />
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-primary/10">
+            <button
+              type="submit"
+              class="flex-1 px-6 py-3 bg-action hover:bg-action-dark text-white font-semibold rounded-lg shadow-md transition-all disabled:opacity-50"
+            >
+              Criar Recompensa
+            </button>
+            <button
+              type="reset"
+              class="px-6 py-3 bg-secondary hover:bg-secondary-dark text-white font-medium rounded-lg shadow-md transition-all"
+            >
+              Limpar
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <div id="rewardFeedback" class="hidden mt-4" role="status" aria-live="polite"></div>
+    </main>
+
+    <footer class="bg-primary-dark text-white py-6 mt-auto">
+      <div class="container mx-auto px-4 text-center">
+        <p class="text-sm text-surface-light">© 2026 Missão Recompensa</p>
+      </div>
+    </footer>
+  </div>
+</BaseLayout>
+
+<script>
+  import { createReward, ApiError } from '../lib/api';
+
+  const form = document.getElementById('rewardForm') as HTMLFormElement | null;
+  const feedback = document.getElementById('rewardFeedback');
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!form.checkValidity()) return;
+
+    const fd = new FormData(form);
+    const data = {
+      title: String(fd.get('title') ?? ''),
+      description: String(fd.get('description') ?? ''),
+      requiredPoints: Number(fd.get('requiredPoints')),
+    };
+    const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+    if (btn) btn.disabled = true;
+
+    try {
+      await createReward(data);
+      showFeedback('success', 'Recompensa criada! 🎉');
+      form.reset();
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : 'Não foi possível criar.';
+      showFeedback('error', message);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  });
+
+  function showFeedback(type: 'success' | 'error', message: string) {
+    if (!feedback) return;
+    feedback.textContent = message;
+    feedback.className =
+      'mt-4 p-4 rounded-lg border text-sm font-medium ' +
+      (type === 'success'
+        ? 'bg-highlight/30 border-highlight text-primary-dark'
+        : 'bg-action/20 border-action text-action-dark');
+    feedback.classList.remove('hidden');
+    feedback.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  }
+</script>

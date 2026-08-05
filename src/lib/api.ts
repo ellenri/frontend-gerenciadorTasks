@@ -11,8 +11,10 @@ import type {
   AuthUser,
   Child,
   CreateChildRequest,
+  CreateRewardRequest,
   LoginRequest,
   RegisterRequest,
+  Reward,
   Task,
   TaskFormData,
 } from './types';
@@ -98,6 +100,27 @@ export async function completeTask(id: string, cookie = ''): Promise<Task> {
 /** POST /api/children — cadastra uma nova criança (com avatar escolhido). */
 export async function createChild(data: CreateChildRequest, cookie = ''): Promise<Child> {
   return apiFetch<Child>('/api/children', { method: 'POST', body: JSON.stringify(data), cookie });
+}
+
+// ============================== Recompensas ==============================
+
+/** GET /api/rewards — lista todas as recompensas. */
+export async function getRewards(cookie = ''): Promise<Reward[]> {
+  return apiFetch<Reward[]>('/api/rewards', { cookie });
+}
+
+/** POST /api/rewards — cria uma recompensa. */
+export async function createReward(data: CreateRewardRequest, cookie = ''): Promise<Reward> {
+  return apiFetch<Reward>('/api/rewards', { method: 'POST', body: JSON.stringify(data), cookie });
+}
+
+/** POST /api/rewards/{id}/redeem — resgata a recompensa para uma criança (desconta pontos). */
+export async function redeemReward(id: string, childId: string, cookie = ''): Promise<Reward> {
+  return apiFetch<Reward>(`/api/rewards/${id}/redeem`, {
+    method: 'POST',
+    body: JSON.stringify({ childId }),
+    cookie,
+  });
 }
 
 // ============================== Autenticação ==============================

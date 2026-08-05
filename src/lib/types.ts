@@ -133,3 +133,22 @@ export interface RegisterRequest {
   email: string;
   password: string;
 }
+
+/** Recompensa resgatável com pontos. */
+export interface Reward {
+  id: string;
+  title: string;
+  description: string;
+  requiredPoints: number;
+  createdById: string;
+  redeemedById?: string | null;
+  redeemedAt?: string | null;
+  createdAt: string;
+}
+
+/** Payload para criar uma recompensa. */
+export interface CreateRewardRequest {
+  title: string;
+  description: string;
+  requiredPoints: number;
+}

@@ -1,0 +1,147 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Header from '@/components/layout/Header.astro';
+import { getChildren, getRewards } from '@/lib/api';
+import { getSession } from '@/lib/auth';
+import type { Child, Reward } from '@/lib/types';
+
+const session = await getSession(Astro);
+if (!session) return Astro.redirect('/login');
+const { user, cookie } = session;
+
+const [children, rewards] = await Promise.all([
+  getChildren(cookie).catch((): Child[] => []),
+  getRewards(cookie).catch((): Reward[] => []),
+]);
+
+const available = rewards.filter((r) => !r.redeemedById);
+const redeemed = rewards.filter((r) => r.redeemedById);
+---
+
+<BaseLayout title="Recompensas - Missão Recompensa">
+  <div id="main-content" class="min-h-screen bg-surface">
+    <Header user={user} />
+
+    <main class="container mx-auto px-4 py-6 md:py-10 max-w-4xl">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold text-primary mb-1">🏆 Recompensas</h1>
+          <p class="text-gray-600 text-sm md:text-base">Troque pontos por prêmios!</p>
+        </div>
+        <a
+          href="/cadastro-recompensas"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-action hover:bg-action-dark text-white rounded-lg text-sm font-medium transition-colors"
+        >
+          + Nova Recompensa
+        </a>
+      </div>
+
+      {/* Seletor de criança (saldo) */}
+      {
+        children.length > 0 && (
+          <section class="bg-white rounded-xl shadow-md p-5 mb-6">
+            <h2 class="text-sm font-semibold text-primary-dark mb-3">Selecione a criança</h2>
+            <div class="flex flex-wrap gap-3">
+              {children.map((c, i) => (
+                <label class="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-primary/20 cursor-pointer transition-colors has-[:checked]:border-action has-[:checked]:bg-surface/40">
+                  <input type="radio" name="child" value={c.id} class="sr-only" checked={i === 0} />
+                  {c.avatar ? (
+                    <img src={c.avatar} alt={c.name} class="w-8 h-8 rounded-full object-cover" />
+                  ) : (
+                    <span class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm">🧒</span>
+                  )}
+                  <span class="text-sm font-medium text-primary">{c.name}</span>
+                  <span class="text-sm font-bold text-secondary-dark">⭐ {c.points}</span>
+                </label>
+              ))}
+            </div>
+          </section>
+        )
+      }
+
+      {/* Disponíveis */}
+      <section class="mb-8">
+        <h2 class="text-lg font-bold text-primary mb-3">Disponíveis</h2>
+        {
+          available.length === 0 ? (
+            <div class="bg-white rounded-xl shadow-md p-8 text-center text-gray-600">
+              Nenhuma recompensa disponível.{' '}
+              <a href="/cadastro-recompensas" class="text-primary font-medium hover:underline">Crie uma</a>.
+            </div>
+          ) : (
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {available.map((r) => (
+                <article class="bg-white rounded-xl shadow-md p-5 flex flex-col">
+                  <h3 class="text-lg font-bold text-primary-dark">{r.title}</h3>
+                  {r.description && <p class="text-sm text-gray-600 mt-1 flex-1">{r.description}</p>}
+                  <div class="mt-4 flex items-center justify-between">
+                    <span class="font-bold text-secondary-dark">⭐ {r.requiredPoints} pts</span>
+                    <button
+                      type="button"
+                      class="resgatar-btn px-4 py-2 bg-highlight hover:bg-highlight-dark text-primary-dark font-semibold rounded-lg text-sm transition-colors disabled:opacity-50"
+                      data-id={r.id}
+                    >
+                      Resgatar
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )
+        }
+      </section>
+
+      {/* Histórico */}
+      {
+        redeemed.length > 0 && (
+          <section>
+            <h2 class="text-lg font-bold text-primary mb-3">Já resgatadas</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {redeemed.map((r) => (
+                <article class="bg-white/60 rounded-xl shadow p-5 flex flex-col opacity-70">
+                  <h3 class="text-lg font-bold text-primary-dark">✅ {r.title}</h3>
+                  {r.description && <p class="text-sm text-gray-600 mt-1">{r.description}</p>}
+                  <span class="mt-3 text-xs text-gray-500">Resgatada</span>
+                </article>
+              ))}
+            </div>
+          </section>
+        )
+      }
+    </main>
+
+    <footer class="bg-primary-dark text-white py-6 mt-auto">
+      <div class="container mx-auto px-4 text-center">
+        <p class="text-sm text-surface-light">© 2026 Missão Recompensa</p>
+      </div>
+    </footer>
+  </div>
+</BaseLayout>
+
+<script>
+  import { redeemReward, ApiError } from '../lib/api';
+
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.resgatar-btn');
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const selected = document.querySelector<HTMLInputElement>('input[name="child"]:checked');
+      if (!id || !selected) {
+        alert('Selecione uma criança para resgatar.');
+        return;
+      }
+      const original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Resgatando...';
+      try {
+        await redeemReward(id, selected.value);
+        window.location.reload();
+      } catch (error) {
+        const message = error instanceof ApiError ? error.message : 'Não foi possível resgatar.';
+        alert(message);
+        btn.disabled = false;
+        btn.textContent = original;
+      }
+    });
+  });
+</script>
