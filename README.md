@@ -1,6 +1,6 @@
-# Missão Recompensa — Frontend
+# Zapt — Frontend
 
-Frontend **SSR (Astro 5 + React + Tailwind)** do app **Missão Recompensa**: um
+Frontend **SSR (Astro 5 + React + Tailwind)** do app **Zapt**: um
 gerenciador de tarefas infantil com gamificação. Transforma tarefas em missões
 épicas que crianças completam para ganhar pontos e resgatar recompensas.
 

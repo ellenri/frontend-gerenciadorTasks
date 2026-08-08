@@ -9,7 +9,7 @@ const session = await getSession(Astro);
 const user = session?.user ?? null;
 ---
 
-<BaseLayout title="Missão Recompensa - Início">
+<BaseLayout title="Zapt - Início">
   <div id="main-content" class="min-h-screen bg-surface">
     <Header user={user} />
 
@@ -19,12 +19,12 @@ const user = session?.user ?? null;
         <div class="inline-block mb-4">
           <img
             src={geminiImage.src}
-            alt="Missão Recompensa Logo"
+            alt="Zapt Logo"
             class="w-36 h-36 md:w-24 md:h-24 mx-auto shadow-lg"
           />
         </div>
         <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-primary mb-4">
-          Missão Recompensa
+          Zapt
         </h1>
         <p class="text-lg md:text-xl text-gray-700 mb-6">
           Transforme tarefas em missões divertidas com recompensas pela conquista
@@ -159,7 +159,7 @@ const user = session?.user ?? null;
     <footer class="bg-primary-dark text-white py-6 mt-auto">
       <div class="container mx-auto px-4 text-center">
         <p class="text-sm text-surface-light">
-          © 2026 Missão Recompensa - Gerenciando responsabilidades com carinho
+          © 2026 Zapt - Gerenciando responsabilidades com carinho
         </p>
       </div>
     </footer>
