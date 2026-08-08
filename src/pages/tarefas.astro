@@ -146,11 +146,11 @@ const formatDate = (iso: string) => {
 
     <!-- Overlay de celebração ao concluir uma missão -->
     <div id="celebration" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-dark/60 backdrop-blur-sm">
-      <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center">
-        <img src="/trophy.png" alt="Troféu" class="w-28 h-28 mx-auto mb-4 object-contain" />
-        <h2 class="text-2xl font-bold text-primary mb-1">Missão Concluída!</h2>
-        <p id="celebrationPoints" class="text-lg text-secondary-dark font-bold mb-2">+0 pontos!</p>
-        <p class="text-sm text-gray-500">Continue assim, herói! 🎉</p>
+      <div class="max-w-sm w-full mx-4 text-center">
+        <img src="/trophy.png" alt="Troféu" class="w-56 md:w-64 h-auto mx-auto mb-4 drop-shadow-[0_8px_24px_rgba(0,0,0,0.45)]" />
+        <h2 class="text-3xl font-bold text-white mb-1">Missão Concluída!</h2>
+        <p id="celebrationPoints" class="text-xl text-highlight font-bold mb-2">+0 pontos!</p>
+        <p class="text-sm text-white/80">Continue assim, herói! 🎉</p>
       </div>
     </div>
 
