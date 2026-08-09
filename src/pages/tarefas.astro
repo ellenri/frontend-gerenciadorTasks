@@ -2,7 +2,7 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Header from '@/components/layout/Header.astro';
 import { getTasks } from '@/lib/api';
-import { getSession } from '@/lib/auth';
+import { requireParent } from '@/lib/auth';
 import {
   CATEGORY_OPTIONS,
   PRIORITY_OPTIONS,
@@ -17,8 +17,7 @@ import {
  * try/catch: se a API estiver fora (ex: build sem backend), mostra estado vazio
  * em vez de quebrar a página.
  */
-const session = await getSession(Astro);
-if (!session) return Astro.redirect('/login');
+const session = await requireParent(Astro);
 const { user, cookie } = session;
 
 let tasks: Task[] = [];

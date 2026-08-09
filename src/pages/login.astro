@@ -73,6 +73,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
 <script>
   import { login, ApiError } from '../lib/api';
+  import { homeForRole } from '../lib/auth';
 
   const form = document.getElementById('loginForm') as HTMLFormElement | null;
   const feedback = document.getElementById('loginFeedback');
@@ -89,8 +90,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     if (btn) btn.disabled = true;
 
     try {
-      await login(data);
-      window.location.href = '/tarefas';
+      const user = await login(data);
+      // Redireciona para a área certa de cada papel:
+      //   Parent -> /painel  |  Child -> /crianca
+      window.location.href = homeForRole(user.role);
     } catch (error) {
       const message = error instanceof ApiError ? error.message : 'Não foi possível entrar.';
       showFeedback(message);

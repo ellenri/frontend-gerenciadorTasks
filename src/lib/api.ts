@@ -78,9 +78,14 @@ async function apiFetch<T>(path: string, init: FetchOptions = {}): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-/** GET /api/children — lista todas as crianças. */
+/** GET /api/children — lista as crianças (do responsável, ou só a si se for criança). */
 export async function getChildren(cookie = ''): Promise<Child[]> {
   return apiFetch<Child[]>('/api/children', { cookie });
+}
+
+/** GET /api/children/me — perfil da própria criança logada. */
+export async function getMyChild(cookie = ''): Promise<Child> {
+  return apiFetch<Child>('/api/children/me', { cookie });
 }
 
 /** GET /api/tasks — lista todas as missões. */

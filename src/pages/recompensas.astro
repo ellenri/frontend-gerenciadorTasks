@@ -2,11 +2,10 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Header from '@/components/layout/Header.astro';
 import { getChildren, getRewards } from '@/lib/api';
-import { getSession } from '@/lib/auth';
+import { requireParent } from '@/lib/auth';
 import type { Child, Reward } from '@/lib/types';
 
-const session = await getSession(Astro);
-if (!session) return Astro.redirect('/login');
+const session = await requireParent(Astro);
 const { user, cookie } = session;
 
 const [children, rewards] = await Promise.all([

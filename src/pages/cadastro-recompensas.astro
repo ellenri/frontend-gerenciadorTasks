@@ -1,10 +1,9 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Header from '@/components/layout/Header.astro';
-import { getSession } from '@/lib/auth';
+import { requireParent } from '@/lib/auth';
 
-const session = await getSession(Astro);
-if (!session) return Astro.redirect('/login');
+const session = await requireParent(Astro);
 const { user } = session;
 ---
 

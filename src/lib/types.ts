@@ -12,6 +12,8 @@ export interface Child {
   birthDate?: string;
   points: number;   // pontuação acumulada (gamificação)
   createdAt: Date;
+  parentUserId?: string; // responsável (User Parent)
+  userId?: string;       // login da criança (User Child)
 }
 
 /**
@@ -92,11 +94,14 @@ export const PRIORITY_OPTIONS: { value: TaskPriority; label: string; color: stri
 
 /**
  * Payload para cadastrar uma nova criança.
+ * Inclui as credenciais de acesso (e-mail + senha) que a criança usará no login.
  */
 export interface CreateChildRequest {
   name: string;
   birthDate: string; // "YYYY-MM-DD"
   avatar?: string;    // caminho do avatar, ex.: "/avatars/boy1.png"
+  email: string;      // login da criança (único)
+  password: string;   // senha da criança (mín. 6)
 }
 
 /**

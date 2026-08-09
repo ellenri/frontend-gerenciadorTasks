@@ -1,0 +1,150 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Header from '@/components/layout/Header.astro';
+import { getMyChild, getTasks } from '@/lib/api';
+import { requireChild } from '@/lib/auth';
+import { CATEGORY_OPTIONS, type Child, type Task, type TaskCategory } from '@/lib/types';
+
+/**
+ * Missões atribuídas à criança logada. Ela pode concluir cada uma e ganhar pontos.
+ */
+const session = await requireChild(Astro);
+const { user, cookie } = session;
+
+let me: Child | null = null;
+let tasks: Task[] = [];
+try {
+  [me, tasks] = await Promise.all([
+    getMyChild(cookie).catch(() => null),
+    getTasks(cookie).catch((): Task[] => []),
+  ]);
+} catch (error) {
+  console.error('Não foi possível carregar as missões:', error);
+}
+
+const categoryLabel = (c: TaskCategory) =>
+  CATEGORY_OPTIONS.find((o) => o.value === c)?.label ?? c;
+
+const formatDate = (iso: string) => {
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+};
+
+const pending = tasks.filter((t) => t.status === 'pending' || t.status === 'in_progress');
+const done = tasks.filter((t) => t.status === 'completed');
+---
+
+<BaseLayout title="Minhas Missões - Zapt">
+  <div id="main-content" class="min-h-screen bg-surface">
+    <Header user={user} />
+
+    <main class="container mx-auto px-4 py-6 md:py-10 max-w-3xl">
+      <div class="mb-6">
+        <h1 class="text-2xl md:text-3xl font-bold text-primary mb-1">🎯 Minhas Missões</h1>
+        <p class="text-gray-600 text-sm md:text-base">
+          Conclua cada missão para ganhar pontos e trocar por recompensas!
+        </p>
+        <p class="text-secondary-dark font-bold mt-1">⭐ {me?.points ?? 0} pontos</p>
+      </div>
+
+      {/* Para fazer */}
+      <section class="mb-8">
+        <h2 class="text-lg font-bold text-primary mb-3">Para fazer ({pending.length})</h2>
+        {pending.length === 0 ? (
+          <div class="bg-white rounded-xl shadow-md p-8 text-center">
+            <p class="text-3xl mb-2">🌟</p>
+            <p class="text-gray-600">Nenhuma missão pendente. Parabéns!</p>
+          </div>
+        ) : (
+          <ul class="space-y-3" aria-label="Missões pendentes">
+            {pending.map((t) => (
+              <li class="bg-white rounded-xl shadow-md p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="min-w-0">
+                  <span class="inline-block text-xs text-gray-500 mb-1">{categoryLabel(t.category)}</span>
+                  <h3 class="text-lg font-bold text-primary-dark">{t.title}</h3>
+                  {t.description && <p class="text-sm text-gray-600 mt-0.5">{t.description}</p>}
+                  <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-gray-500">
+                    <span>📅 {formatDate(t.scheduledDate)} às {t.scheduledTime}</span>
+                    {t.estimatedDuration && <span>⏱️ {t.estimatedDuration} min</span>}
+                    <span class="font-semibold text-secondary-dark">⭐ +{t.rewardPoints} pts</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="concluir-btn flex-shrink-0 px-5 py-2.5 bg-highlight hover:bg-highlight-dark text-primary-dark font-semibold rounded-lg transition-colors disabled:opacity-50"
+                  data-id={t.id}
+                >
+                  Concluir 🏆
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* Concluídas */}
+      {done.length > 0 && (
+        <section>
+          <h2 class="text-lg font-bold text-primary mb-3">Concluídas ({done.length})</h2>
+          <ul class="space-y-2">
+            {done.map((t) => (
+              <li class="bg-white/60 rounded-xl shadow p-4 flex items-center justify-between gap-3">
+                <span class="font-medium text-primary-dark truncate">✅ {t.title}</span>
+                <span class="text-sm font-semibold text-secondary-dark whitespace-nowrap">+{t.rewardPoints} pts</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </main>
+
+    {/* Overlay de celebração */}
+    <div id="celebration" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-dark/60 backdrop-blur-sm">
+      <div class="max-w-sm w-full mx-4 text-center">
+        <img src="/trophy.png" alt="Troféu" class="w-56 md:w-64 h-auto mx-auto mb-4 drop-shadow-[0_8px_24px_rgba(0,0,0,0.45)]" />
+        <h2 class="text-3xl font-bold text-white mb-1">Missão Concluída!</h2>
+        <p id="celebrationPoints" class="text-xl text-highlight font-bold mb-2">+0 pontos!</p>
+        <p class="text-sm text-white/80">Continue assim! 🎉</p>
+      </div>
+    </div>
+
+    <footer class="bg-primary-dark text-white py-6 mt-auto">
+      <div class="container mx-auto px-4 text-center">
+        <p class="text-sm text-surface-light">© 2026 Zapt</p>
+      </div>
+    </footer>
+  </div>
+</BaseLayout>
+
+<script>
+  import { completeTask, ApiError } from '../../lib/api';
+
+  document.querySelectorAll<HTMLButtonElement>('.concluir-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      if (!id) return;
+      btn.disabled = true;
+      btn.textContent = 'Concluindo...';
+
+      try {
+        const task = await completeTask(id);
+        showCelebration(task.rewardPoints);
+        setTimeout(() => window.location.reload(), 2500);
+      } catch (error) {
+        const message = error instanceof ApiError ? error.message : 'Não foi possível concluir.';
+        alert(message);
+        btn.disabled = false;
+        btn.textContent = 'Concluir 🏆';
+      }
+    });
+  });
+
+  function showCelebration(points: number) {
+    const overlay = document.getElementById('celebration');
+    const pointsEl = document.getElementById('celebrationPoints');
+    if (overlay && pointsEl) {
+      pointsEl.textContent = `+${points} pontos!`;
+      overlay.classList.remove('hidden');
+    }
+  }
+</script>

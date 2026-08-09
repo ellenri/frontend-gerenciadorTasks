@@ -2,7 +2,7 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Header from '@/components/layout/Header.astro';
 import { getChildren } from '@/lib/api';
-import { getSession } from '@/lib/auth';
+import { requireParent } from '@/lib/auth';
 import type { Child } from '@/lib/types';
 
 /**
@@ -10,8 +10,7 @@ import type { Child } from '@/lib/types';
  * Mostra as crianças ordenadas por pontos, com avatar, troféu ao líder
  * e barra de progresso relativa.
  */
-const session = await getSession(Astro);
-if (!session) return Astro.redirect('/login');
+const session = await requireParent(Astro);
 const { user, cookie } = session;
 
 let children: Child[] = [];

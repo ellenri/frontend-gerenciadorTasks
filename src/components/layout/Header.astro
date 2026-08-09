@@ -1,15 +1,21 @@
 ---
 import { getUnreadNotificationCount } from '@/lib/api';
+import { homeForRole } from '@/lib/auth';
 
 /**
- * Cabeçalho principal (responsivo). Recebe o usuário autenticado (se houver)
- * e, quando logado, mostra o sininho com o contador de não-lidas.
+ * Cabeçalho principal (responsivo). Os links mudam conforme o papel:
+ *  - Parent: gestão (cadastros, missões, recompensas, ranking)
+ *  - Child: suas missões, recompensas e notificações
+ *  - anônimo: só o botão Entrar
  */
 interface Props {
-  user?: { fullName: string } | null;
+  user?: { fullName: string; role?: string } | null;
 }
 
 const { user = null } = Astro.props;
+const role = user?.role;
+const isParent = role === 'Parent';
+const isChild = role === 'Child';
 
 let unreadCount = 0;
 if (user) {
@@ -19,60 +25,90 @@ if (user) {
     unreadCount = 0;
   }
 }
+
+// Destino do logo conforme o papel.
+const logoHref = user ? homeForRole(role) : '/';
+// Destino das notificações conforme o papel.
+const notifHref = isChild ? '/crianca/notificacoes' : '/notificacoes';
 ---
 
 <header class="bg-primary text-white shadow-lg">
   <nav class="container mx-auto px-4 py-3" aria-label="Navegação principal">
     <div class="flex items-center justify-between">
       <!-- Logo / ícone de home -->
-      <a href="/" aria-label="Zapt — Início" class="flex items-center shrink-0">
+      <a href={logoHref} aria-label="Zapt — Início" class="flex items-center shrink-0">
         <img src="/zapt/estrela.png" alt="Zapt" class="h-10 md:h-12 w-auto" />
       </a>
 
       <!-- Links de Navegação + Área do usuário -->
       <ul class="flex items-center gap-2 md:gap-4 whitespace-nowrap">
-        <li>
-          <a
-            href="/cadastro-tarefas"
-            class="px-3 py-2 md:px-4 md:py-2 rounded-lg bg-action hover:bg-action-dark transition-colors text-sm md:text-base font-medium"
-          >
-            Nova Missão
-          </a>
-        </li>
-        <li>
-          <a
-            href="/tarefas"
-            class="px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-primary-dark transition-colors text-sm md:text-base font-medium"
-          >
-            Missões
-          </a>
-        </li>
-        <li>
-          <a
-            href="/recompensas"
-            class="px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-primary-dark transition-colors text-sm md:text-base font-medium"
-          >
-            Recompensas
-          </a>
-        </li>
-        <li>
-          <a
-            href="/ranking"
-            class="px-3 py-2 md:px-4 md:py-2 rounded-lg bg-highlight hover:bg-highlight-dark text-primary transition-colors text-sm md:text-base font-medium"
-          >
-            🏆 Ranking
-          </a>
-        </li>
-        <li>
-          <a
-            href="/cadastro-criancas"
-            class="px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-primary-dark transition-colors text-sm md:text-base font-medium"
-          >
-            + Criança
-          </a>
-        </li>
+        {isParent && (
+          <>
+            <li>
+              <a
+                href="/cadastro-tarefas"
+                class="px-3 py-2 md:px-4 md:py-2 rounded-lg bg-action hover:bg-action-dark transition-colors text-sm md:text-base font-medium"
+              >
+                Nova Missão
+              </a>
+            </li>
+            <li>
+              <a
+                href="/tarefas"
+                class="px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-primary-dark transition-colors text-sm md:text-base font-medium"
+              >
+                Missões
+              </a>
+            </li>
+            <li>
+              <a
+                href="/recompensas"
+                class="px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-primary-dark transition-colors text-sm md:text-base font-medium"
+              >
+                Recompensas
+              </a>
+            </li>
+            <li>
+              <a
+                href="/ranking"
+                class="px-3 py-2 md:px-4 md:py-2 rounded-lg bg-highlight hover:bg-highlight-dark text-primary transition-colors text-sm md:text-base font-medium"
+              >
+                🏆 Ranking
+              </a>
+            </li>
+            <li>
+              <a
+                href="/cadastro-criancas"
+                class="px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-primary-dark transition-colors text-sm md:text-base font-medium"
+              >
+                + Criança
+              </a>
+            </li>
+          </>
+        )}
 
-        <!-- Usuário: logado mostra Sair; anônimo mostra Entrar -->
+        {isChild && (
+          <>
+            <li>
+              <a
+                href="/crianca/missoes"
+                class="px-3 py-2 md:px-4 md:py-2 rounded-lg bg-action hover:bg-action-dark transition-colors text-sm md:text-base font-medium"
+              >
+                Missões
+              </a>
+            </li>
+            <li>
+              <a
+                href="/crianca/recompensas"
+                class="px-3 py-2 md:px-4 md:py-2 rounded-lg bg-highlight hover:bg-highlight-dark text-primary transition-colors text-sm md:text-base font-medium"
+              >
+                🎁 Recompensas
+              </a>
+            </li>
+          </>
+        )}
+
+        <!-- Usuário: logado mostra sininho/Sair; anônimo mostra Entrar -->
         <li
           class:list={[
             'flex items-center gap-2 pl-2 md:pl-3',
@@ -83,7 +119,7 @@ if (user) {
             user ? (
               <>
                 <a
-                  href="/notificacoes"
+                  href={notifHref}
                   class="relative px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-primary-dark transition-colors"
                   title="Notificações"
                   aria-label="Notificações"
