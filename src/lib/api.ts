@@ -41,9 +41,11 @@ interface FetchOptions extends RequestInit {
 
 async function apiFetch<T>(path: string, init: FetchOptions = {}): Promise<T> {
   const { cookie, headers, ...rest } = init;
+  // FormData: o navegador define o Content-Type (com boundary) — não forçamos JSON.
+  const isFormData = init.body instanceof FormData;
   const response = await fetch(`${API_BASE}${path}`, {
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(cookie ? { Cookie: cookie } : {}),
       ...headers,
     },
@@ -109,9 +111,25 @@ export async function createTask(data: TaskFormData, cookie = ''): Promise<Task>
   return apiFetch<Task>('/api/tasks', { method: 'POST', body: JSON.stringify(data), cookie });
 }
 
-/** POST /api/tasks/{id}/complete — conclui a missão (credita pontos à criança). */
-export async function completeTask(id: string, cookie = ''): Promise<Task> {
-  return apiFetch<Task>(`/api/tasks/${id}/complete`, { method: 'POST', cookie });
+/** POST /api/tasks/{id}/submit — criança envia a foto de comprovação (multipart). */
+export async function submitTask(id: string, file: File, cookie = ''): Promise<Task> {
+  const form = new FormData();
+  form.append('file', file);
+  return apiFetch<Task>(`/api/tasks/${id}/submit`, { method: 'POST', body: form, cookie });
+}
+
+/** POST /api/tasks/{id}/approve — responsável aprova a comprovação (conclui + pontos). */
+export async function approveTask(id: string, cookie = ''): Promise<Task> {
+  return apiFetch<Task>(`/api/tasks/${id}/approve`, { method: 'POST', cookie });
+}
+
+/** POST /api/tasks/{id}/reject — responsável rejeita com comentário (criança refaz). */
+export async function rejectTask(id: string, comment: string, cookie = ''): Promise<Task> {
+  return apiFetch<Task>(`/api/tasks/${id}/reject`, {
+    method: 'POST',
+    body: JSON.stringify({ comment }),
+    cookie,
+  });
 }
 
 /** POST /api/tasks/{id}/skip — cancela/abandona a missão (exclusivo do responsável). */

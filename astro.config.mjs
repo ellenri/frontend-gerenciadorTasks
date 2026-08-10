@@ -29,6 +29,11 @@ export default defineConfig({
           target: 'http://localhost:5104',
           changeOrigin: true,
         },
+        // Imagens de comprovação servidas pela API em /uploads/...
+        '/uploads': {
+          target: 'http://localhost:5104',
+          changeOrigin: true,
+        },
       },
     },
   },

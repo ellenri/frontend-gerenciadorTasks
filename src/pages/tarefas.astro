@@ -2,23 +2,23 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Header from '@/components/layout/Header.astro';
 import { getTasks } from '@/lib/api';
-import { getSession } from '@/lib/auth';
+import { requireParent } from '@/lib/auth';
 import {
   CATEGORY_OPTIONS,
   PRIORITY_OPTIONS,
   type Task,
   type TaskCategory,
   type TaskPriority,
-  type TaskStatus,
 } from '@/lib/types';
 
 /**
- * Busca as missões no SERVIDOR (frontmatter roda a cada navegação em dev).
- * try/catch: se a API estiver fora (ex: build sem backend), mostra estado vazio
- * em vez de quebrar a página.
+ * Missões do responsável.
+ *
+ * Fluxo de aprovação: quando a criança envia a foto (pending_review), a missão
+ * aparece em "Aguardando sua aprovação" com a imagem e botões Aprovar / Rejeitar.
+ * As demais (pending/in_progress) ficam em "Em andamento" com a opção Cancelar.
  */
-const session = await getSession(Astro);
-if (!session) return Astro.redirect('/login');
+const session = await requireParent(Astro);
 const { user, cookie } = session;
 
 let tasks: Task[] = [];
@@ -28,38 +28,32 @@ try {
   console.error('Não foi possível carregar as missões:', error);
 }
 
-// --- Helpers de rótulo e cor (lookup em vez de if/else repetido) ---
 const categoryLabel = (c: TaskCategory) =>
   CATEGORY_OPTIONS.find((o) => o.value === c)?.label ?? c;
 
 const priorityInfo = (p: TaskPriority) =>
   PRIORITY_OPTIONS.find((o) => o.value === p);
 
-const statusInfo: Record<TaskStatus, { label: string; cls: string; icon: string }> = {
-  pending: { label: 'Pendente', cls: 'bg-secondary/20 text-secondary-dark', icon: '⏳' },
-  in_progress: { label: 'Em andamento', cls: 'bg-primary/20 text-primary-dark', icon: '🚀' },
-  completed: { label: 'Concluída', cls: 'bg-highlight/30 text-primary-dark', icon: '✅' },
-  skipped: { label: 'Cancelada', cls: 'bg-action/20 text-action-dark', icon: '⏭️' },
-};
-
-// "2099-12-25" -> "25/12/2099"
 const formatDate = (iso: string) => {
   const [y, m, d] = iso.split('-');
   return `${d}/${m}/${y}`;
 };
+
+// Pendentes de aprovação (criança enviou a foto) e em andamento.
+const awaiting = tasks.filter((t) => t.status === 'pending_review');
+const active = tasks.filter((t) => t.status === 'pending' || t.status === 'in_progress');
 ---
 
 <BaseLayout title="Missões - Zapt">
   <div id="main-content" class="min-h-screen bg-surface">
     <Header user={user} />
 
-    <main class="container mx-auto px-4 py-6 md:py-10">
-      <!-- Título -->
+    <main class="container mx-auto px-4 py-6 md:py-10 max-w-4xl">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">
         <div>
-          <h1 class="text-2xl md:text-3xl font-bold text-primary mb-1">Missões Ativas</h1>
+          <h1 class="text-2xl md:text-3xl font-bold text-primary mb-1">Missões</h1>
           <p class="text-gray-600 text-sm md:text-base">
-            Acompanhe as missões cadastradas e seu progresso
+            Aprove as comprovações enviadas pelas crianças
           </p>
         </div>
         <a
@@ -73,38 +67,82 @@ const formatDate = (iso: string) => {
         </a>
       </div>
 
-      {
-        tasks.length === 0 ? (
-          // Estado vazio
-          <section class="bg-white rounded-xl shadow-md p-12 text-center">
-            <div class="w-20 h-20 bg-surface rounded-full flex items-center justify-center mx-auto mb-4 text-3xl" aria-hidden="true">
-              🎯
-            </div>
-            <h3 class="text-xl font-semibold text-primary mb-2">Nenhuma missão cadastrada</h3>
-            <p class="text-gray-600 mb-6">Comece criando a primeira missão para uma criança</p>
-            <a
-              href="/cadastro-tarefas"
-              class="inline-flex items-center gap-2 px-6 py-3 bg-action hover:bg-action-dark text-white font-semibold rounded-lg shadow-md transition-all"
-            >
-              Criar Primeira Missão
-            </a>
-          </section>
+      {/* Aguardando aprovação */}
+      <section class="mb-8">
+        <h2 class="text-lg font-bold text-primary mb-3">
+          👀 Aguardando sua aprovação ({awaiting.length})
+        </h2>
+        {awaiting.length === 0 ? (
+          <p class="text-sm text-gray-500">Nenhuma comprovação aguardando.</p>
         ) : (
-          // Lista de cards de missão
-          <section class="grid gap-4" aria-label="Lista de missões">
-            {tasks.map((task) => {
-              const status = statusInfo[task.status];
-              const priority = priorityInfo(task.priority);
-              const canAct = task.status === 'pending' || task.status === 'in_progress';
+          <div class="grid gap-4 md:grid-cols-2">
+            {awaiting.map((t) => {
+              const priority = priorityInfo(t.priority);
               return (
-                <article class="bg-white rounded-xl shadow-md p-5 hover:shadow-lg transition-shadow">
+                <article class="bg-white rounded-xl shadow-md p-5 flex flex-col">
+                  <div class="flex items-center justify-between gap-2 mb-1">
+                    <span class="text-xs text-gray-500">{categoryLabel(t.category)}</span>
+                    {priority && (
+                      <span class={`px-2 py-0.5 rounded-full text-xs font-medium text-white ${priority.color}`}>
+                        {priority.label}
+                      </span>
+                    )}
+                  </div>
+                  <h3 class="text-lg font-bold text-primary-dark">{t.title}</h3>
+                  <div class="text-sm text-gray-500 mt-1 mb-3">
+                    ⭐ +{t.rewardPoints} pts · 📅 {formatDate(t.scheduledDate)}
+                  </div>
+
+                  {t.submissionImageUrl && (
+                    <a href={t.submissionImageUrl} target="_blank" rel="noopener" class="block mb-3">
+                      <img
+                        src={t.submissionImageUrl}
+                        alt="Comprovação"
+                        class="rounded-lg w-full max-h-56 object-cover border border-primary/10"
+                      />
+                    </a>
+                  )}
+
+                  <div class="mt-auto flex gap-2">
+                    <button
+                      type="button"
+                      class="aprovar-btn flex-1 px-4 py-2 bg-highlight hover:bg-highlight-dark text-primary-dark font-semibold rounded-lg text-sm transition-colors disabled:opacity-50"
+                      data-id={t.id}
+                    >
+                      ✅ Aprovar
+                    </button>
+                    <button
+                      type="button"
+                      class="rejeitar-btn flex-1 px-4 py-2 bg-action hover:bg-action-dark text-white font-semibold rounded-lg text-sm transition-colors disabled:opacity-50"
+                      data-id={t.id}
+                    >
+                      🔁 Rejeitar
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Em andamento */}
+      <section>
+        <h2 class="text-lg font-bold text-primary mb-3">Em andamento ({active.length})</h2>
+        {active.length === 0 ? (
+          <div class="bg-white rounded-xl shadow-md p-10 text-center">
+            <p class="text-3xl mb-2">🎯</p>
+            <p class="text-gray-600">Nenhuma missão em andamento.</p>
+          </div>
+        ) : (
+          <section class="grid gap-4" aria-label="Missões em andamento">
+            {active.map((task) => {
+              const priority = priorityInfo(task.priority);
+              return (
+                <article class="bg-white rounded-xl shadow-md p-5">
                   <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    {/* Conteúdo */}
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center gap-2 mb-1">
-                        <span class={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${status.cls}`}>
-                          {status.icon} {status.label}
-                        </span>
                         <span class="text-xs text-gray-500">{categoryLabel(task.category)}</span>
                       </div>
                       <h3 class="text-lg font-bold text-primary-dark truncate">{task.title}</h3>
@@ -113,92 +151,79 @@ const formatDate = (iso: string) => {
                       )}
                       <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-500">
                         <span>📅 {formatDate(task.scheduledDate)} às {task.scheduledTime}</span>
-                        {task.estimatedDuration && <span>⏱️ {task.estimatedDuration} min</span>}
                         <span class="font-semibold text-secondary-dark">⭐ +{task.rewardPoints} pts</span>
                       </div>
                     </div>
-
-                    {/* Ação */}
-                    <div class="flex-shrink-0 flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-shrink-0">
                       {priority && (
-                        <span class={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium text-white ${priority.color}`}>
+                        <span class={`px-2.5 py-0.5 rounded-full text-xs font-medium text-white ${priority.color}`}>
                           {priority.label}
                         </span>
                       )}
-                      {canAct && (
-                        <button
-                          type="button"
-                          class="concluir-btn px-4 py-2 bg-highlight hover:bg-highlight-dark text-primary-dark font-semibold rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          data-id={task.id}
-                        >
-                          Concluir 🏆
-                        </button>
-                      )}
-                      {canAct && (
-                        <button
-                          type="button"
-                          class="cancelar-btn px-4 py-2 bg-action hover:bg-action-dark text-white font-semibold rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          data-id={task.id}
-                        >
-                          Cancelar
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        class="cancelar-btn px-4 py-2 bg-action hover:bg-action-dark text-white font-semibold rounded-lg text-sm transition-colors disabled:opacity-50"
+                        data-id={task.id}
+                      >
+                        Cancelar
+                      </button>
                     </div>
                   </div>
                 </article>
               );
             })}
           </section>
-        )
-      }
+        )}
+      </section>
     </main>
-
-    <!-- Overlay de celebração ao concluir uma missão -->
-    <div id="celebration" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-dark/60 backdrop-blur-sm">
-      <div class="max-w-sm w-full mx-4 text-center">
-        <img src="/" alt="Troféu" class="w-56 md:w-64 h-auto mx-auto mb-4 drop-shadow-[0_8px_24px_rgba(0,0,0,0.45)]" />
-        <h2 class="text-3xl font-bold text-white mb-1">Missão Concluída!</h2>
-        <p id="celebrationPoints" class="text-xl text-highlight font-bold mb-2">+0 pontos!</p>
-        <p class="text-sm text-white/80">Continue assim, herói! 🎉</p>
-      </div>
-    </div>
 
     <footer class="bg-primary-dark text-white py-6 mt-auto">
       <div class="container mx-auto px-4 text-center">
-        <p class="text-sm text-surface-light">
-          © 2026 Zapt - Complete missões, ganhe recompensas!
-        </p>
+        <p class="text-sm text-surface-light">© 2026 Zapt</p>
       </div>
     </footer>
   </div>
 </BaseLayout>
 
-<!--
-  Script client-side: lida com o clique em "Concluir".
-  Como a lista é renderizada no servidor, só precisamos de JS para a AÇÃO
-  (concluir via POST). Após concluir, recarregamos para refletir o novo estado.
--->
 <script>
-  import { completeTask, skipTask, ApiError } from '../lib/api';
+  import { approveTask, rejectTask, skipTask, ApiError } from '../lib/api';
 
-  document.querySelectorAll<HTMLButtonElement>('.concluir-btn').forEach((btn) => {
+  document.querySelectorAll<HTMLButtonElement>('.aprovar-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const id = btn.dataset.id;
       if (!id) return;
       btn.disabled = true;
-      btn.textContent = 'Concluindo...';
-
+      btn.textContent = 'Aprovando...';
       try {
-        const task = await completeTask(id);
-        showCelebration(task.rewardPoints); // celebra antes de recarregar
-        setTimeout(() => window.location.reload(), 2500);
+        await approveTask(id);
+        window.location.reload();
       } catch (error) {
-        const message = error instanceof ApiError
-          ? error.message
-          : 'Não foi possível concluir a missão.';
-        alert(message);
+        alert(error instanceof ApiError ? error.message : 'Não foi possível aprovar.');
         btn.disabled = false;
-        btn.textContent = 'Concluir 🏆';
+        btn.textContent = '✅ Aprovar';
+      }
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('.rejeitar-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      if (!id) return;
+      const comment = window.prompt('O que precisa ser revisto?');
+      if (comment === null) return; // cancelou
+      if (!comment.trim()) {
+        alert('Informe o que precisa ser revisto.');
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = 'Rejeitando...';
+      try {
+        await rejectTask(id, comment.trim());
+        window.location.reload();
+      } catch (error) {
+        alert(error instanceof ApiError ? error.message : 'Não foi possível rejeitar.');
+        btn.disabled = false;
+        btn.textContent = '🔁 Rejeitar';
       }
     });
   });
@@ -210,28 +235,14 @@ const formatDate = (iso: string) => {
       if (!confirm('Cancelar esta missão? Ela não concederá pontos.')) return;
       btn.disabled = true;
       btn.textContent = 'Cancelando...';
-
       try {
         await skipTask(id);
         window.location.reload();
       } catch (error) {
-        const message = error instanceof ApiError
-          ? error.message
-          : 'Não foi possível cancelar a missão.';
-        alert(message);
+        alert(error instanceof ApiError ? error.message : 'Não foi possível cancelar.');
         btn.disabled = false;
         btn.textContent = 'Cancelar';
       }
     });
   });
-
-  // Mostra o overlay com os pontos ganhos e o troféu.
-  function showCelebration(points: number) {
-    const overlay = document.getElementById('celebration');
-    const pointsEl = document.getElementById('celebrationPoints');
-    if (overlay && pointsEl) {
-      pointsEl.textContent = `+${points} pontos!`;
-      overlay.classList.remove('hidden');
-    }
-  }
 </script>

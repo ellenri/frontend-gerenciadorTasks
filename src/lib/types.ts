@@ -25,7 +25,12 @@ export type TaskPriority = 'low' | 'medium' | 'high';
 /**
  * Status possível de uma tarefa
  */
-export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'skipped';
+export type TaskStatus =
+  | 'pending'
+  | 'in_progress'
+  | 'pending_review' // criança enviou comprovação; aguarda aprovação do responsável
+  | 'completed'
+  | 'skipped';
 
 /**
  * Categorias de tarefas
@@ -57,6 +62,9 @@ export interface Task {
   completedAt?: Date;
   notificationSent?: boolean;
   rewardPoints: number;   // pontos concedidos ao concluir
+  submissionImageUrl?: string | null;  // foto de comprovação enviada pela criança
+  reviewerComment?: string | null;     // feedback do responsável ao rejeitar
+  submittedAt?: Date | null;           // quando a criança enviou a comprovação
 }
 
 /**
