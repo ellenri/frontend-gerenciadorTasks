@@ -309,6 +309,16 @@ const today = new Date().toISOString().split('T')[0];
   <!-- Feedback do envio (preenchido pelo script abaixo) -->
   <div id="formFeedback" class="hidden" role="status" aria-live="polite"></div>
 
+  <!-- Modal de sucesso no cadastro -->
+  <div id="successModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-dark/60 backdrop-blur-sm">
+    <div class="max-w-sm w-full mx-4 text-center bg-white rounded-2xl shadow-xl p-8">
+      <div class="w-20 h-20 bg-highlight rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">✅</div>
+      <h2 class="text-2xl font-bold text-primary mb-1">Missão criada!</h2>
+      <p id="successMessage" class="text-gray-600 mb-3"></p>
+      <p class="text-sm text-gray-500">Redirecionando para Missões…</p>
+    </div>
+  </div>
+
   <!-- Script de manipulação do formulário (client-side) -->
   <script>
     import { createTask, ApiError } from '../../lib/api';
@@ -367,10 +377,10 @@ const today = new Date().toISOString().split('T')[0];
 
       try {
         const created = await createTask(payload);
-        const msg = created.length > 1
-          ? `Missão criada com ${created.length} ocorrências (8 semanas)! 🎉`
-          : 'Missão criada com sucesso! 🎉 Veja em “Missões”.';
-        showFeedback('success', msg);
+        const detail = created.length > 1
+          ? `${created.length} missões criadas (8 semanas)`
+          : 'Missão criada com sucesso';
+        showSuccessModal(detail);
         form.reset();
         updateRecurrenceUI();
       } catch (error) {
@@ -392,6 +402,15 @@ const today = new Date().toISOString().split('T')[0];
           : 'bg-action/20 border-action text-action-dark');
       feedback.classList.remove('hidden');
       feedback.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    }
+
+    // Pop-up de sucesso + redirecionamento para Missões.
+    function showSuccessModal(detail: string) {
+      const modal = document.getElementById('successModal');
+      const msg = document.getElementById('successMessage');
+      if (msg) msg.textContent = detail;
+      if (modal) modal.classList.remove('hidden');
+      setTimeout(() => { window.location.href = '/tarefas'; }, 1500);
     }
   </script>
 </section>
