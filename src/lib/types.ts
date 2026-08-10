@@ -14,6 +14,7 @@ export interface Child {
   createdAt: Date;
   parentUserId?: string; // responsável (User Parent)
   userId?: string;       // login da criança (User Child)
+  email?: string;        // e-mail de acesso (só preenchido na edição)
 }
 
 /**
@@ -102,6 +103,18 @@ export interface CreateChildRequest {
   avatar?: string;    // caminho do avatar, ex.: "/avatars/boy1.png"
   email: string;      // login da criança (único)
   password: string;   // senha da criança (mín. 6)
+}
+
+/**
+ * Payload para editar uma criança existente.
+ * A senha é opcional: vazia/nula = manter a atual.
+ */
+export interface UpdateChildRequest {
+  name: string;
+  birthDate: string; // "YYYY-MM-DD"
+  avatar?: string;
+  email: string;      // novo e-mail de acesso (único)
+  password?: string;  // nova senha (mín. 6); vazio = manter a atual
 }
 
 /**

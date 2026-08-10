@@ -1,0 +1,219 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Header from '@/components/layout/Header.astro';
+import { AVATAR_OPTIONS } from '@/lib/types';
+import { getChildForEdit } from '@/lib/api';
+import { requireParent } from '@/lib/auth';
+
+const session = await requireParent(Astro);
+const { user, cookie } = session;
+
+const id = Astro.params.id!;
+let child;
+try {
+  child = await getChildForEdit(id, cookie);
+} catch {
+  // não encontrada ou não pertence ao responsável -> volta pro painel
+  throw Astro.redirect('/painel');
+}
+
+const today = new Date().toISOString().split('T')[0];
+---
+
+<BaseLayout title="Editar Criança - Zapt">
+  <div id="main-content" class="min-h-screen bg-surface">
+    <Header user={user} />
+
+    <main class="container mx-auto px-4 py-6 md:py-10 max-w-2xl">
+      <!-- Migalha -->
+      <nav class="mb-6 text-sm" aria-label="Navegação">
+        <a href="/painel" class="text-primary hover:text-primary-dark">Painel</a>
+        <span class="text-primary/60"> / </span>
+        <span class="text-primary font-medium" aria-current="page">Editar {child.name}</span>
+      </nav>
+
+      <div class="mb-6">
+        <h1 class="text-2xl md:text-3xl font-bold text-primary mb-1">Editar Criança</h1>
+        <p class="text-gray-600 text-sm md:text-base">
+          Altere os dados da criança. Deixe a senha em branco para manter a atual.
+        </p>
+      </div>
+
+      <section class="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div class="bg-primary px-6 py-5">
+          <h2 class="text-xl font-bold text-white">Dados da Criança</h2>
+        </div>
+
+        <form id="childForm" class="p-6 md:p-8 space-y-6" aria-label="Edição de criança">
+          <!-- Nome -->
+          <div>
+            <label for="name" class="block text-sm font-medium text-primary-dark mb-1.5">
+              Nome <span class="text-action ml-1" aria-label="obrigatório">*</span>
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              required
+              value={child.name}
+              class="w-full px-4 py-3 rounded-lg border-2 border-primary/30 focus:border-action focus:ring-2 focus:ring-action/20 outline-none transition-all"
+            />
+          </div>
+
+          <!-- Data de Nascimento -->
+          <div>
+            <label for="birthDate" class="block text-sm font-medium text-primary-dark mb-1.5">
+              Data de Nascimento <span class="text-action ml-1" aria-label="obrigatório">*</span>
+            </label>
+            <input
+              type="date"
+              id="birthDate"
+              name="birthDate"
+              required
+              max={today}
+              value={child.birthDate}
+              class="w-full px-4 py-3 rounded-lg border-2 border-primary/30 focus:border-action focus:ring-2 focus:ring-action/20 outline-none transition-all"
+            />
+          </div>
+
+          <!-- Avatar -->
+          <div>
+            <span class="block text-sm font-medium text-primary-dark mb-2">
+              Avatar <span class="text-action ml-1" aria-label="obrigatório">*</span>
+            </span>
+            <div class="grid grid-cols-4 gap-3" role="radiogroup" aria-required="true">
+              {AVATAR_OPTIONS.map((avatar) => (
+                <label class="relative cursor-pointer group">
+                  <input
+                    type="radio"
+                    name="avatar"
+                    value={avatar}
+                    required
+                    checked={avatar === child.avatar}
+                    class="peer sr-only"
+                  />
+                  <div
+                    class="rounded-xl border-2 border-primary/20 bg-surface overflow-hidden peer-checked:border-action peer-checked:ring-2 peer-checked:ring-action/30 hover:border-action hover:shadow-md transition-all"
+                  >
+                    <img src={avatar} alt="Avatar" class="w-full aspect-square object-cover" />
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <!-- Acesso (e-mail + senha) -->
+          <div class="pt-4 border-t border-primary/10">
+            <p class="text-sm font-medium text-primary-dark mb-3">
+              Acesso da criança
+              <span class="text-gray-500 font-normal">(e-mail + senha que ela usa para entrar)</span>
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="email" class="block text-sm font-medium text-primary-dark mb-1.5">
+                  E-mail <span class="text-action ml-1" aria-label="obrigatório">*</span>
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  autocomplete="username"
+                  value={child.email}
+                  class="w-full px-4 py-3 rounded-lg border-2 border-primary/30 focus:border-action focus:ring-2 focus:ring-action/20 outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label for="password" class="block text-sm font-medium text-primary-dark mb-1.5">
+                  Nova senha
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  minlength="6"
+                  autocomplete="new-password"
+                  placeholder="deixe vazio para manter"
+                  class="w-full px-4 py-3 rounded-lg border-2 border-primary/30 focus:border-action focus:ring-2 focus:ring-action/20 outline-none transition-all"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Botões -->
+          <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-primary/10">
+            <button
+              type="submit"
+              class="flex-1 px-6 py-3 bg-action hover:bg-action-dark text-white font-semibold rounded-lg shadow-md transition-all disabled:opacity-50"
+            >
+              Salvar Alterações
+            </button>
+            <a
+              href="/painel"
+              class="px-6 py-3 bg-secondary hover:bg-secondary-dark text-white font-medium rounded-lg shadow-md transition-all text-center"
+            >
+              Cancelar
+            </a>
+          </div>
+        </form>
+      </div>
+
+      <div id="childFeedback" class="hidden mt-4" role="status" aria-live="polite"></div>
+    </main>
+
+    <footer class="bg-primary-dark text-white py-6 mt-auto">
+      <div class="container mx-auto px-4 text-center">
+        <p class="text-sm text-surface-light">© 2026 Zapt</p>
+      </div>
+    </footer>
+  </div>
+</BaseLayout>
+
+<script>
+  import { updateChild, ApiError } from '../../lib/api';
+  import type { UpdateChildRequest } from '../../lib/types';
+
+  const CHILD_ID = window.location.pathname.split('/').filter(Boolean).pop() ?? '';
+
+  const form = document.getElementById('childForm') as HTMLFormElement | null;
+  const feedback = document.getElementById('childFeedback');
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!form.checkValidity()) return;
+
+    const data = Object.fromEntries(new FormData(form).entries());
+    const payload: UpdateChildRequest = {
+      name: String(data.name ?? ''),
+      birthDate: String(data.birthDate ?? ''),
+      avatar: data.avatar ? String(data.avatar) : undefined,
+      email: String(data.email ?? ''),
+      // senha vazia -> backend mantém a atual
+      password: data.password ? String(data.password) : undefined,
+    };
+
+    const submitButton = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+    if (submitButton) submitButton.disabled = true;
+
+    try {
+      await updateChild(CHILD_ID, payload);
+      showFeedback('success', 'Alterações salvas! ✅');
+      setTimeout(() => { window.location.href = '/painel'; }, 1200);
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : 'Não foi possível salvar.';
+      showFeedback('error', message);
+      if (submitButton) submitButton.disabled = false;
+    }
+  });
+
+  function showFeedback(type: 'success' | 'error', message: string) {
+    if (!feedback) return;
+    feedback.textContent = message;
+    feedback.className = 'mt-4 p-4 rounded-lg border text-sm font-medium ' +
+      (type === 'success'
+        ? 'bg-highlight/30 border-highlight text-primary-dark'
+        : 'bg-action/20 border-action text-action-dark');
+    feedback.classList.remove('hidden');
+    feedback.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  }
+</script>

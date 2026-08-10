@@ -18,6 +18,7 @@ import type {
   Reward,
   Task,
   TaskFormData,
+  UpdateChildRequest,
 } from './types';
 
 const API_BASE =
@@ -86,6 +87,16 @@ export async function getChildren(cookie = ''): Promise<Child[]> {
 /** GET /api/children/me — perfil da própria criança logada. */
 export async function getMyChild(cookie = ''): Promise<Child> {
   return apiFetch<Child>('/api/children/me', { cookie });
+}
+
+/** GET /api/children/{id}/edit — dados completos de uma criança para edição (perfil + e-mail). */
+export async function getChildForEdit(id: string, cookie = ''): Promise<Child> {
+  return apiFetch<Child>(`/api/children/${id}/edit`, { cookie });
+}
+
+/** PUT /api/children/{id} — edita uma criança (perfil + e-mail/senha). */
+export async function updateChild(id: string, data: UpdateChildRequest, cookie = ''): Promise<Child> {
+  return apiFetch<Child>(`/api/children/${id}`, { method: 'PUT', body: JSON.stringify(data), cookie });
 }
 
 /** GET /api/tasks — lista todas as missões. */
