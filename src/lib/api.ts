@@ -175,12 +175,20 @@ export async function logout(): Promise<void> {
   await apiFetch<void>('/api/auth/logout', { method: 'POST' });
 }
 
-/** GET /api/auth/me — usuário atual (null se anônimo). */
+/**
+ * GET /api/auth/me — usuário atual.
+ * Retorna null se anônimo (401) OU se a API estiver indisponível (erro de rede).
+ * Assim uma queda do backend degrada para "anônimo" em vez de quebrar a página (SSR).
+ */
 export async function getCurrentUser(cookie = ''): Promise<AuthUser | null> {
   try {
     return await apiFetch<AuthUser>('/api/auth/me', { cookie });
   } catch (error) {
+    // 401 = simplesmente não autenticado.
     if (error instanceof ApiError && error.status === 401) return null;
-    throw error;
+    // Qualquer outro erro aqui é tipicamente de conectividade (API offline):
+    // loga e degrada para anônimo em vez de propagar e quebrar o SSR.
+    console.warn('[auth] API indisponível, tratando como anônimo:', error);
+    return null;
   }
 }
