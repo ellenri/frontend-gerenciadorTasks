@@ -65,7 +65,13 @@ export interface Task {
   submissionImageUrl?: string | null;  // foto de comprovação enviada pela criança
   reviewerComment?: string | null;     // feedback do responsável ao rejeitar
   submittedAt?: Date | null;           // quando a criança enviou a comprovação
+  recurrenceGroupId?: string | null;   // agrupa ocorrências de uma missão recorrente
 }
+
+/**
+ * Tipos de repetição de uma missão
+ */
+export type RecurrenceType = 'once' | 'weekly' | 'twice_weekly';
 
 /**
  * Dados do formulário para criar/editar tarefa
@@ -79,6 +85,8 @@ export interface TaskFormData {
   scheduledTime: string;
   assignedTo: string;
   estimatedDuration: string;
+  recurrenceType: RecurrenceType;
+  recurrenceDays: number[]; // DayOfWeek 0=Dom ... 6=Sáb
 }
 
 /**
@@ -90,6 +98,24 @@ export const CATEGORY_OPTIONS: { value: TaskCategory; label: string }[] = [
   { value: 'personal_care', label: 'Cuidados Pessoais' },
   { value: 'extracurricular', label: 'Extra-curricular' },
   { value: 'other', label: 'Outro' },
+];
+
+/** Opções de repetição. */
+export const RECURRENCE_OPTIONS: { value: RecurrenceType; label: string }[] = [
+  { value: 'once', label: 'Uma vez' },
+  { value: 'weekly', label: 'Toda semana' },
+  { value: 'twice_weekly', label: '2x na semana' },
+];
+
+/** Dias da semana (DayOfWeek). value bate com o int do backend (0=Dom). */
+export const WEEKDAY_OPTIONS: { value: number; label: string }[] = [
+  { value: 0, label: 'Dom' },
+  { value: 1, label: 'Seg' },
+  { value: 2, label: 'Ter' },
+  { value: 3, label: 'Qua' },
+  { value: 4, label: 'Qui' },
+  { value: 5, label: 'Sex' },
+  { value: 6, label: 'Sáb' },
 ];
 
 /**

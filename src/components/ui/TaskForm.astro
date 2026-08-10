@@ -4,7 +4,7 @@
  * Responsivo e acessível
  */
 import { getChildren } from '@/lib/api';
-import { CATEGORY_OPTIONS, PRIORITY_OPTIONS, type Child } from '@/lib/types';
+import { CATEGORY_OPTIONS, PRIORITY_OPTIONS, RECURRENCE_OPTIONS, WEEKDAY_OPTIONS, type Child } from '@/lib/types';
 
 // Buscar crianças da API (resiliente: se a API estiver fora, lista vazia).
 let children: Child[] = [];
@@ -182,6 +182,42 @@ const today = new Date().toISOString().split('T')[0];
         </div>
       </div>
 
+      <!-- Repetição -->
+      <div>
+        <label for="recurrenceType" class="block text-sm font-medium text-primary-dark mb-1.5">
+          Repetição
+          <span class="text-action ml-1" aria-label="obrigatório">*</span>
+        </label>
+        <select
+          id="recurrenceType"
+          name="recurrenceType"
+          required
+          class="w-full px-4 py-3 rounded-lg border-2 border-primary/30 focus:border-action focus:ring-2 focus:ring-action/20 outline-none transition-all bg-white cursor-pointer"
+        >
+          {RECURRENCE_OPTIONS.map((r) => (
+            <option value={r.value}>{r.label}</option>
+          ))}
+        </select>
+        <p class="text-xs text-gray-500 mt-1" id="recurrenceHelp">Recorrências geram uma missão por ocorrência (8 semanas).</p>
+      </div>
+
+      <!-- Dias da semana (somente para recorrência) -->
+      <div id="recurrenceDaysBlock" class="hidden">
+        <span class="block text-sm font-medium text-primary-dark mb-2" id="recurrenceDaysLabel">
+          Dia(s) da semana <span class="text-action ml-1" aria-label="obrigatório">*</span>
+        </span>
+        <div class="flex flex-wrap gap-2">
+          {WEEKDAY_OPTIONS.map((d) => (
+            <label class="cursor-pointer">
+              <input type="checkbox" name="recurrenceDays" value={d.value} class="peer sr-only" />
+              <div class="w-12 h-12 flex items-center justify-center rounded-lg border-2 border-primary/30 text-sm font-medium peer-checked:border-action peer-checked:bg-action peer-checked:text-white hover:border-action transition-all">
+                {d.label}
+              </div>
+            </label>
+          ))}
+        </div>
+      </div>
+
       <!-- Seleção de Criança -->
       <div>
         <span class="block text-sm font-medium text-primary-dark mb-2">
@@ -276,26 +312,68 @@ const today = new Date().toISOString().split('T')[0];
   <!-- Script de manipulação do formulário (client-side) -->
   <script>
     import { createTask, ApiError } from '../../lib/api';
-    import type { TaskFormData } from '../../lib/types';
+    import type { RecurrenceType, TaskFormData } from '../../lib/types';
 
     const form = document.getElementById('taskForm') as HTMLFormElement | null;
     const feedback = document.getElementById('formFeedback');
+    const recurrenceSelect = document.getElementById('recurrenceType') as HTMLSelectElement | null;
+    const recurrenceBlock = document.getElementById('recurrenceDaysBlock');
+    const recurrenceDaysLabel = document.getElementById('recurrenceDaysLabel');
+
+    // Mostra/esconde os dias da semana conforme o tipo de repetição.
+    function updateRecurrenceUI() {
+      if (!recurrenceSelect || !recurrenceBlock) return;
+      const type = recurrenceSelect.value as RecurrenceType;
+      const isRecurring = type !== 'once';
+      recurrenceBlock.classList.toggle('hidden', !isRecurring);
+      if (recurrenceDaysLabel) {
+        const qtd = type === 'weekly' ? '1 dia' : '2 dias';
+        recurrenceDaysLabel.innerHTML = `Escolha ${qtd} da semana <span class="text-action ml-1" aria-label="obrigatório">*</span>`;
+      }
+    }
+    recurrenceSelect?.addEventListener('change', updateRecurrenceUI);
+    updateRecurrenceUI();
 
     form?.addEventListener('submit', async (event) => {
       event.preventDefault();
       if (!form.checkValidity()) return; // deixa o navegador validar os 'required'
 
-      // FormData captura todos os campos nomeados do formulário.
-      const data = Object.fromEntries(new FormData(form).entries());
+      const fd = new FormData(form);
+      const recurrenceType = String(fd.get('recurrenceType') ?? 'once') as RecurrenceType;
+      const recurrenceDays = fd.getAll('recurrenceDays').map(Number);
+
+      // Validação client-side da quantidade de dias (o backend também valida).
+      const expected = recurrenceType === 'weekly' ? 1 : recurrenceType === 'twice_weekly' ? 2 : 0;
+      if (recurrenceType !== 'once' && recurrenceDays.length !== expected) {
+        showFeedback('error', `Para esta repetição, marque exatamente ${expected} dia(s) da semana.`);
+        return;
+      }
+
+      const payload: TaskFormData = {
+        title: String(fd.get('title') ?? ''),
+        description: String(fd.get('description') ?? ''),
+        category: String(fd.get('category') ?? '') as TaskFormData['category'],
+        priority: String(fd.get('priority') ?? '') as TaskFormData['priority'],
+        scheduledDate: String(fd.get('scheduledDate') ?? ''),
+        scheduledTime: String(fd.get('scheduledTime') ?? ''),
+        assignedTo: String(fd.get('assignedTo') ?? ''),
+        estimatedDuration: String(fd.get('duration') ?? ''),
+        recurrenceType,
+        recurrenceDays: recurrenceType === 'once' ? [] : recurrenceDays,
+      };
+
       const submitButton = form.querySelector<HTMLButtonElement>('button[type="submit"]');
       if (submitButton) submitButton.disabled = true; // evita duplo clique
 
       try {
-        await createTask(data as unknown as TaskFormData);
-        showFeedback('success', 'Missão criada com sucesso! 🎉 Veja em “Missões”.');
+        const created = await createTask(payload);
+        const msg = created.length > 1
+          ? `Missão criada com ${created.length} ocorrências (8 semanas)! 🎉`
+          : 'Missão criada com sucesso! 🎉 Veja em “Missões”.';
+        showFeedback('success', msg);
         form.reset();
+        updateRecurrenceUI();
       } catch (error) {
-        // ApiError traz a mensagem da regra de negócio (ex: data no passado).
         const message = error instanceof ApiError
           ? error.message
           : 'Não foi possível criar a missão. Tente novamente.';

@@ -106,9 +106,9 @@ export async function getTasks(cookie = ''): Promise<Task[]> {
   return apiFetch<Task[]>('/api/tasks', { cookie });
 }
 
-/** POST /api/tasks — cria uma missão a partir dos dados do formulário. */
-export async function createTask(data: TaskFormData, cookie = ''): Promise<Task> {
-  return apiFetch<Task>('/api/tasks', { method: 'POST', body: JSON.stringify(data), cookie });
+/** POST /api/tasks — cria missão(ões) a partir do formulário (recorrência gera várias). */
+export async function createTask(data: TaskFormData, cookie = ''): Promise<Task[]> {
+  return apiFetch<Task[]>('/api/tasks', { method: 'POST', body: JSON.stringify(data), cookie });
 }
 
 /** POST /api/tasks/{id}/submit — criança envia a foto de comprovação (multipart). */
