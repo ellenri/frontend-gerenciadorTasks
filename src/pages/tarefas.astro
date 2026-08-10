@@ -39,7 +39,7 @@ const statusInfo: Record<TaskStatus, { label: string; cls: string; icon: string 
   pending: { label: 'Pendente', cls: 'bg-secondary/20 text-secondary-dark', icon: '⏳' },
   in_progress: { label: 'Em andamento', cls: 'bg-primary/20 text-primary-dark', icon: '🚀' },
   completed: { label: 'Concluída', cls: 'bg-highlight/30 text-primary-dark', icon: '✅' },
-  skipped: { label: 'Abandonada', cls: 'bg-action/20 text-action-dark', icon: '⏭️' },
+  skipped: { label: 'Cancelada', cls: 'bg-action/20 text-action-dark', icon: '⏭️' },
 };
 
 // "2099-12-25" -> "25/12/2099"
@@ -119,9 +119,9 @@ const formatDate = (iso: string) => {
                     </div>
 
                     {/* Ação */}
-                    <div class="flex-shrink-0">
+                    <div class="flex-shrink-0 flex items-center gap-2">
                       {priority && (
-                        <span class={`inline-block mr-2 px-2.5 py-0.5 rounded-full text-xs font-medium text-white ${priority.color}`}>
+                        <span class={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium text-white ${priority.color}`}>
                           {priority.label}
                         </span>
                       )}
@@ -132,6 +132,15 @@ const formatDate = (iso: string) => {
                           data-id={task.id}
                         >
                           Concluir 🏆
+                        </button>
+                      )}
+                      {canAct && (
+                        <button
+                          type="button"
+                          class="cancelar-btn px-4 py-2 bg-action hover:bg-action-dark text-white font-semibold rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          data-id={task.id}
+                        >
+                          Cancelar
                         </button>
                       )}
                     </div>
@@ -170,7 +179,7 @@ const formatDate = (iso: string) => {
   (concluir via POST). Após concluir, recarregamos para refletir o novo estado.
 -->
 <script>
-  import { completeTask, ApiError } from '../lib/api';
+  import { completeTask, skipTask, ApiError } from '../lib/api';
 
   document.querySelectorAll<HTMLButtonElement>('.concluir-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
@@ -190,6 +199,28 @@ const formatDate = (iso: string) => {
         alert(message);
         btn.disabled = false;
         btn.textContent = 'Concluir 🏆';
+      }
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('.cancelar-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      if (!id) return;
+      if (!confirm('Cancelar esta missão? Ela não concederá pontos.')) return;
+      btn.disabled = true;
+      btn.textContent = 'Cancelando...';
+
+      try {
+        await skipTask(id);
+        window.location.reload();
+      } catch (error) {
+        const message = error instanceof ApiError
+          ? error.message
+          : 'Não foi possível cancelar a missão.';
+        alert(message);
+        btn.disabled = false;
+        btn.textContent = 'Cancelar';
       }
     });
   });

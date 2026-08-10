@@ -114,6 +114,11 @@ export async function completeTask(id: string, cookie = ''): Promise<Task> {
   return apiFetch<Task>(`/api/tasks/${id}/complete`, { method: 'POST', cookie });
 }
 
+/** POST /api/tasks/{id}/skip — cancela/abandona a missão (exclusivo do responsável). */
+export async function skipTask(id: string, cookie = ''): Promise<Task> {
+  return apiFetch<Task>(`/api/tasks/${id}/skip`, { method: 'POST', cookie });
+}
+
 /** POST /api/children — cadastra uma nova criança (com avatar escolhido). */
 export async function createChild(data: CreateChildRequest, cookie = ''): Promise<Child> {
   return apiFetch<Child>('/api/children', { method: 'POST', body: JSON.stringify(data), cookie });

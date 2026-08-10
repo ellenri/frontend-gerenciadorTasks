@@ -1,0 +1,138 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Header from '@/components/layout/Header.astro';
+import { getTasks, getChildren } from '@/lib/api';
+import { requireParent } from '@/lib/auth';
+import {
+  CATEGORY_OPTIONS,
+  PRIORITY_OPTIONS,
+  type Child,
+  type Task,
+  type TaskCategory,
+  type TaskPriority,
+} from '@/lib/types';
+
+/**
+ * Histórico do responsável: missões concluídas e canceladas (que ele criou),
+ * ordenadas das mais recentes para as mais antigas.
+ */
+const session = await requireParent(Astro);
+const { user, cookie } = session;
+
+const [tasksResult, childrenResult] = await Promise.all([
+  getTasks(cookie).catch((): Task[] => []),
+  getChildren(cookie).catch((): Child[] => []),
+]);
+
+const children = childrenResult;
+const childName = (id: string) => children.find((c) => c.id === id)?.name ?? '—';
+
+// Só histórico: concluídas e canceladas.
+const history = tasksResult
+  .filter((t) => t.status === 'completed' || t.status === 'skipped')
+  .sort((a, b) => (b.updatedAt > a.updatedAt ? 1 : -1));
+
+const completed = history.filter((t) => t.status === 'completed');
+const cancelled = history.filter((t) => t.status === 'skipped');
+
+const categoryLabel = (c: TaskCategory) =>
+  CATEGORY_OPTIONS.find((o) => o.value === c)?.label ?? c;
+const priorityInfo = (p: TaskPriority) =>
+  PRIORITY_OPTIONS.find((o) => o.value === p);
+
+const formatDate = (iso: string) => {
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+};
+---
+
+<BaseLayout title="Histórico - Zapt">
+  <div id="main-content" class="min-h-screen bg-surface">
+    <Header user={user} />
+
+    <main class="container mx-auto px-4 py-6 md:py-10 max-w-4xl">
+      <div class="mb-6">
+        <h1 class="text-2xl md:text-3xl font-bold text-primary mb-1">📜 Histórico</h1>
+        <p class="text-gray-600 text-sm md:text-base">
+          Missões concluídas e canceladas
+        </p>
+      </div>
+
+      {history.length === 0 ? (
+        <div class="bg-white rounded-xl shadow-md p-10 text-center">
+          <p class="text-3xl mb-2">🗂️</p>
+          <p class="text-gray-600">Nenhuma missão no histórico ainda.</p>
+        </div>
+      ) : (
+        <>
+          {/* Concluídas */}
+          <section class="mb-8">
+            <h2 class="text-lg font-bold text-primary mb-3">
+              ✅ Concluídas ({completed.length})
+            </h2>
+            {completed.length === 0 ? (
+              <p class="text-sm text-gray-500">Nenhuma missão concluída.</p>
+            ) : (
+              <ul class="space-y-3">
+                {completed.map((t) => {
+                  return (
+                    <li class="bg-white rounded-xl shadow-md p-4 flex items-center justify-between gap-3">
+                      <div class="min-w-0">
+                        <h3 class="font-bold text-primary-dark truncate">✅ {t.title}</h3>
+                        <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-gray-500">
+                          <span>🧒 {childName(t.assignedTo)}</span>
+                          <span>📁 {categoryLabel(t.category)}</span>
+                          {t.completedAt && (
+                            <span>📅 {new Date(t.completedAt).toLocaleDateString('pt-BR')}</span>
+                          )}
+                        </div>
+                      </div>
+                      <span class="font-bold text-secondary-dark whitespace-nowrap">⭐ +{t.rewardPoints} pts</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          {/* Canceladas */}
+          {cancelled.length > 0 && (
+            <section>
+              <h2 class="text-lg font-bold text-primary mb-3">
+                ⏭️ Canceladas ({cancelled.length})
+              </h2>
+              <ul class="space-y-3">
+                {cancelled.map((t) => {
+                  const priority = priorityInfo(t.priority);
+                  return (
+                    <li class="bg-white/60 rounded-xl shadow p-4 flex items-center justify-between gap-3 opacity-80">
+                      <div class="min-w-0">
+                        <h3 class="font-bold text-primary-dark truncate">⏭️ {t.title}</h3>
+                        <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-gray-500">
+                          <span>🧒 {childName(t.assignedTo)}</span>
+                          <span>📁 {categoryLabel(t.category)}</span>
+                          <span>📅 {formatDate(t.scheduledDate)}</span>
+                        </div>
+                      </div>
+                      {priority && (
+                        <span class={`px-2.5 py-0.5 rounded-full text-xs font-medium text-white ${priority.color}`}>
+                          {priority.label}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+        </>
+      )}
+    </main>
+
+    <footer class="bg-primary-dark text-white py-6 mt-auto">
+      <div class="container mx-auto px-4 text-center">
+        <p class="text-sm text-surface-light">© 2026 Zapt</p>
+      </div>
+    </footer>
+  </div>
+</BaseLayout>
