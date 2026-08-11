@@ -1,0 +1,225 @@
+---
+/**
+ * Visão de Missões da criança organizada por período (mesmo padrão do Histórico).
+ *
+ * Diferente do Histórico (que agrupa por completedAt), aqui agrupamos pela
+ * DATA AGENDADA (scheduledDate) — afinal, missões são organizadas pelo dia em
+ * que devem ser feitas.
+ *
+ * Cada dia mostra as missões por estado:
+ *  - 🎯 A fazer (pending/in_progress): com formulário de envio de foto.
+ *    Se houver reviewerComment, mostra o feedback do responsável (pediu revisão).
+ *  - 👀 Aguardando aprovação (pending_review): mostra a foto enviada.
+ *  - ✅ Concluídas (completed): registro compacto com os pontos ganhos.
+ */
+import type { Task, TaskCategory } from '@/lib/types';
+import { type Period, type DayBucket, type MissionSummary } from '@/lib/history';
+import PeriodBar from '../history/PeriodBar.astro';
+import { CATEGORY_OPTIONS } from '@/lib/types';
+
+interface Props {
+  period: Period;
+  offset: number;
+  basePath: string;
+  title: string;
+  summary: MissionSummary;
+  /** Dias já agrupados pela data agendada (lib: bucketByDay + scheduledTaskDate). */
+  buckets: DayBucket[];
+}
+
+const { period, offset, basePath, title, summary, buckets } = Astro.props;
+
+const categoryLabel = (c: TaskCategory) =>
+  CATEGORY_OPTIONS.find((o) => o.value === c)?.label ?? c;
+
+const isTodo = (t: Task) => t.status === 'pending' || t.status === 'in_progress';
+const isWaiting = (t: Task) => t.status === 'pending_review';
+
+// Ordem dentro de um dia: a fazer → aguardando → concluída (prioriza o açãovel).
+const missionRank = (t: Task): number =>
+  isTodo(t) ? 0 : isWaiting(t) ? 1 : t.status === 'completed' ? 2 : 3;
+const byMissionOrder = (a: Task, b: Task): number => {
+  const r = missionRank(a) - missionRank(b);
+  if (r !== 0) return r;
+  // Mesmo estado: horário mais cedo primeiro.
+  return a.scheduledTime < b.scheduledTime ? -1 : 1;
+};
+
+const formatScheduled = (iso: string) => {
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+};
+
+const hasAny = buckets.length > 0;
+---
+
+<PeriodBar period={period} offset={offset} basePath={basePath} title={title} />
+
+<!-- Card de resumo -->
+<div class="bg-white rounded-xl shadow-md p-4 mb-6">
+  <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm">
+    <span class="flex items-center gap-1.5">
+      <span class="font-bold text-primary">🎯 {summary.total}</span>
+      <span class="text-gray-500">{summary.total === 1 ? 'missão' : 'missões'}</span>
+    </span>
+    {summary.todo > 0 && (
+      <span class="flex items-center gap-1.5">
+        <span class="font-bold text-secondary-dark">⏳ {summary.todo}</span>
+        <span class="text-gray-500">a fazer</span>
+      </span>
+    )}
+    {summary.waiting > 0 && (
+      <span class="flex items-center gap-1.5">
+        <span class="font-bold text-action-dark">👀 {summary.waiting}</span>
+        <span class="text-gray-500">aguardando</span>
+      </span>
+    )}
+    {summary.done > 0 && (
+      <span class="flex items-center gap-1.5">
+        <span class="font-bold text-highlight-dark">✅ {summary.done}</span>
+        <span class="text-gray-500">feitas</span>
+      </span>
+    )}
+    <span class="flex items-center gap-1.5">
+      <span class="font-bold text-secondary-dark">⭐ {summary.potentialPoints}</span>
+      <span class="text-gray-500">pts a ganhar</span>
+    </span>
+  </div>
+</div>
+
+{hasAny ? (
+  <ul class="space-y-6">
+    {
+      buckets.map((day) => {
+        const dayTasks = [...day.tasks].sort(byMissionOrder);
+        const dayTodo = dayTasks.filter(isTodo).length;
+        const dayWaiting = dayTasks.filter(isWaiting).length;
+        const dayDone = dayTasks.filter((t) => t.status === 'completed').length;
+        return (
+          <li>
+            <div class="flex items-center justify-between mb-2 px-1">
+              <h3 class="font-bold text-primary-dark text-sm md:text-base">📅 {day.label}</h3>
+              <span class="text-xs md:text-sm text-gray-500 flex gap-2">
+                {dayTodo > 0 && <span>⏳ {dayTodo}</span>}
+                {dayWaiting > 0 && <span class="text-action-dark">👀 {dayWaiting}</span>}
+                {dayDone > 0 && <span class="text-highlight-dark">✅ {dayDone}</span>}
+              </span>
+            </div>
+            <ul class="space-y-3">
+              {dayTasks.map((t) => {
+                if (isTodo(t)) {
+                  return (
+                    <li class="bg-white rounded-xl shadow-md p-5">
+                      <span class="inline-block text-xs text-gray-500 mb-1">{categoryLabel(t.category)}</span>
+                      <h4 class="text-lg font-bold text-primary-dark">{t.title}</h4>
+                      {t.description && <p class="text-sm text-gray-600 mt-0.5">{t.description}</p>}
+                      <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-gray-500">
+                        <span>🕐 {formatScheduled(t.scheduledDate)} às {t.scheduledTime}</span>
+                        <span class="font-semibold text-secondary-dark">⭐ +{t.rewardPoints} pts</span>
+                      </div>
+
+                      {t.reviewerComment && (
+                        <div class="mt-2 mb-2 p-3 rounded-lg bg-action/10 border border-action/30">
+                          <p class="text-xs font-semibold text-action-dark mb-0.5">🔁 O responsável pediu para revisar:</p>
+                          <p class="text-sm text-primary-dark">{t.reviewerComment}</p>
+                        </div>
+                      )}
+
+                      <form class="enviar-form mt-3 flex flex-wrap items-center gap-2" data-id={t.id}>
+                        <label class="inline-flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary-dark text-white text-sm font-medium rounded-lg cursor-pointer transition-colors">
+                          📷 Escolher foto
+                          <input type="file" accept="image/*" class="comprovante-input sr-only" required />
+                        </label>
+                        <span class="nome-arquivo text-xs text-gray-500 truncate max-w-[12rem]"></span>
+                        <button
+                          type="submit"
+                          class="enviar-btn px-4 py-2 bg-highlight hover:bg-highlight-dark text-primary-dark text-sm font-semibold rounded-lg transition-colors disabled:opacity-50"
+                          disabled
+                        >
+                          Enviar
+                        </button>
+                      </form>
+                    </li>
+                  );
+                }
+
+                if (isWaiting(t)) {
+                  return (
+                    <li class="bg-white rounded-xl shadow-md p-5">
+                      <h4 class="font-bold text-primary-dark">{t.title}</h4>
+                      <p class="text-xs text-action-dark mb-2">👀 Você enviou a comprovação. Aguarde o responsável analisar.</p>
+                      {t.submissionImageUrl && (
+                        <a href={t.submissionImageUrl} target="_blank" rel="noopener">
+                          <img
+                            src={t.submissionImageUrl}
+                            alt="Comprovação"
+                            class="rounded-lg max-h-48 w-auto border border-primary/10"
+                          />
+                        </a>
+                      )}
+                    </li>
+                  );
+                }
+
+                if (t.status === 'completed') {
+                  return (
+                    <li class="bg-white/60 rounded-xl shadow p-4 flex items-center justify-between gap-3">
+                      <span class="font-medium text-primary-dark truncate">✅ {t.title}</span>
+                      <span class="text-sm font-semibold text-secondary-dark whitespace-nowrap">+{t.rewardPoints} pts</span>
+                    </li>
+                  );
+                }
+
+                return null;
+              })}
+            </ul>
+          </li>
+        );
+      })
+    }
+  </ul>
+) : (
+  <div class="bg-white rounded-xl shadow-md p-10 text-center">
+    <p class="text-3xl mb-2">🌟</p>
+    <p class="text-gray-600">Nenhuma missão neste período. Aproveite para descansar!</p>
+  </div>
+)}
+
+<script>
+  import { submitTask, ApiError } from '@/lib/api';
+
+  // Habilita o botão "Enviar" só quando um arquivo é selecionado.
+  document.querySelectorAll<HTMLFormElement>('.enviar-form').forEach((form) => {
+    const input = form.querySelector<HTMLInputElement>('.comprovante-input')!;
+    const nome = form.querySelector<HTMLElement>('.nome-arquivo')!;
+    const btn = form.querySelector<HTMLButtonElement>('.enviar-btn')!;
+
+    input.addEventListener('change', () => {
+      const file = input.files?.[0];
+      if (file) {
+        nome.textContent = file.name;
+        btn.disabled = false;
+      }
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const id = form.dataset.id;
+      const file = input.files?.[0];
+      if (!id || !file) return;
+
+      btn.disabled = true;
+      const original = btn.textContent;
+      btn.textContent = 'Enviando...';
+      try {
+        await submitTask(id, file);
+        window.location.reload(); // mantém o período atual na URL
+      } catch (error) {
+        const message = error instanceof ApiError ? error.message : 'Não foi possível enviar.';
+        alert(message);
+        btn.disabled = false;
+        btn.textContent = original;
+      }
+    });
+  });
+</script>

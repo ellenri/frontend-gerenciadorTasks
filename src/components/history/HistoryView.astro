@@ -1,0 +1,135 @@
+---
+/**
+ * Visão de histórico de missões organizada por período.
+ *
+ * Renderiza: seletor de granularidade (Hoje/Semana/Mês), navegação ‹ › entre
+ * períodos, card de resumo (concluídas, canceladas, taxa, streak, pontos) e a
+ * lista agrupada por dia.
+ *
+ * É o componente compartilhado entre /historico (responsável) e
+ * /crianca/historico (criança) — elimina a duplicação que existia entre eles.
+ */
+import type { Task, TaskCategory } from '@/lib/types';
+import {
+  type Period,
+  type DayGroup,
+  type HistorySummary,
+} from '@/lib/history';
+import PeriodBar from './PeriodBar.astro';
+import { CATEGORY_OPTIONS } from '@/lib/types';
+
+interface Props {
+  /** Todas as missões de histórico (completed + skipped), de qualquer período. */
+  history: Task[];
+  period: Period;
+  offset: number;
+  /** Caminho base para construir os links de navegação (ex.: '/historico'). */
+  basePath: string;
+  /** Rótulo dos grupos de dia e resumo já calculados pela lib. */
+  title: string;
+  summary: HistorySummary;
+  groups: DayGroup[];
+  /** Resolvedor de nome da criança (só faz sentido para o responsável). */
+  childName?: (id: string) => string;
+}
+
+const {
+  period,
+  offset,
+  basePath,
+  title,
+  summary,
+  groups,
+  childName,
+} = Astro.props;
+
+const categoryLabel = (c: TaskCategory) =>
+  CATEGORY_OPTIONS.find((o) => o.value === c)?.label ?? c;
+
+const pct = Math.round(summary.completionRate * 100);
+const hasHistory = groups.length > 0;
+---
+
+<PeriodBar period={period} offset={offset} basePath={basePath} title={title} />
+
+<!-- Card de resumo -->
+<div class="bg-white rounded-xl shadow-md p-4 mb-6">
+  <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm">
+    <span class="flex items-center gap-1.5">
+      <span class="font-bold text-highlight-dark">✅ {summary.completed}</span>
+      <span class="text-gray-500">concluídas</span>
+    </span>
+    <span class="flex items-center gap-1.5">
+      <span class="font-bold text-gray-500">⏭️ {summary.skipped}</span>
+      <span class="text-gray-500">canceladas</span>
+    </span>
+    {summary.total > 0 && (
+      <span class="flex items-center gap-1.5">
+        <span class="font-bold text-primary">📊 {pct}%</span>
+        <span class="text-gray-500">conclusão</span>
+      </span>
+    )}
+    {summary.streak > 0 && (
+      <span class="flex items-center gap-1.5">
+        <span class="font-bold text-action-dark">🔥 {summary.streak}</span>
+        <span class="text-gray-500">{summary.streak === 1 ? 'dia' : 'dias'}</span>
+      </span>
+    )}
+    <span class="flex items-center gap-1.5">
+      <span class="font-bold text-secondary-dark">⭐ {summary.points}</span>
+      <span class="text-gray-500">pts no período</span>
+    </span>
+  </div>
+</div>
+
+<!-- Lista agrupada por dia -->
+{hasHistory ? (
+  <ul class="space-y-6">
+    {
+      groups.map((day) => (
+        <li>
+          <div class="flex items-center justify-between mb-2 px-1">
+            <h3 class="font-bold text-primary-dark text-sm md:text-base">📅 {day.label}</h3>
+            <span class="text-xs md:text-sm text-gray-500">
+              {day.completed}/{day.completed + day.skipped}
+              {day.points > 0 && <span class="text-secondary-dark font-bold"> · ⭐ {day.points}</span>}
+            </span>
+          </div>
+          <ul class="space-y-2">
+            {day.tasks.map((t) => {
+              const completed = t.status === 'completed';
+              return (
+                <li
+                  class:list={[
+                    'bg-white rounded-xl shadow-md p-4 flex items-center justify-between gap-3',
+                    !completed && 'opacity-80',
+                  ]}
+                >
+                  <div class="min-w-0">
+                    <h4 class="font-bold text-primary-dark truncate">
+                      {completed ? '✅' : '⏭️'} {t.title}
+                    </h4>
+                    <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-gray-500">
+                      <span>📁 {categoryLabel(t.category)}</span>
+                      {childName && <span>🧒 {childName(t.assignedTo)}</span>}
+                    </div>
+                  </div>
+                  {completed ? (
+                    <span class="font-bold text-secondary-dark whitespace-nowrap">⭐ +{t.rewardPoints}</span>
+                  ) : (
+                    <span class="text-xs text-gray-400 whitespace-nowrap">cancelada</span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </li>
+      ))
+    }
+  </ul>
+) : (
+  <div class="bg-white rounded-xl shadow-md p-10 text-center">
+    <p class="text-3xl mb-2">🗂️</p>
+    <p class="text-gray-600">Nenhuma missão neste período.</p>
+  </div>
+)}

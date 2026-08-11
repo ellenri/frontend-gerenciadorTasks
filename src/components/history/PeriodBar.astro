@@ -1,0 +1,61 @@
+---
+/**
+ * Barra de períodos compartilhada entre Histórico e Missões.
+ *
+ * Renderiza o seletor de granularidade (Hoje/Semana/Mês) e a navegação ‹ ›
+ * entre períodos (não permite avançar para o futuro). Tudo via links SSR —
+ * cada clique é uma navegação GET com query string (?periodo=&offset=).
+ */
+import { PERIOD_OPTIONS, type Period, periodHref } from '@/lib/history';
+
+interface Props {
+  period: Period;
+  offset: number;
+  basePath: string;
+  title: string;
+}
+
+const { period, offset, basePath, title } = Astro.props;
+const canGoForward = offset < 0; // não navega para o futuro
+---
+
+<div class="flex gap-2 mb-4">
+  {
+    PERIOD_OPTIONS.map((opt) => (
+      <a
+        href={periodHref(basePath, opt.value, 0)}
+        class:list={[
+          'px-4 py-1.5 rounded-full text-sm font-medium transition-colors',
+          opt.value === period
+            ? 'bg-primary text-white shadow'
+            : 'bg-white text-primary hover:bg-primary-light/30',
+        ]}
+      >
+        {opt.label}
+      </a>
+    ))
+  }
+</div>
+
+<div class="flex items-center justify-between bg-white rounded-xl shadow-md px-4 py-3 mb-4">
+  <a
+    href={periodHref(basePath, period, offset - 1)}
+    class="text-primary text-xl font-bold px-2 hover:text-primary-dark"
+    aria-label="Período anterior">‹</a
+  >
+
+  <span class="font-bold text-primary">{title}</span>
+
+  {
+    canGoForward ? (
+      <a
+        href={periodHref(basePath, period, offset + 1)}
+        class="text-primary text-xl font-bold px-2 hover:text-primary-dark"
+        aria-label="Próximo período">
+        ›
+      </a>
+    ) : (
+      <span class="text-xl font-bold px-2 text-gray-300" aria-hidden="true">›</span>
+    )
+  }
+</div>
