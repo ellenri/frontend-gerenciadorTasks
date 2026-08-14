@@ -4,7 +4,10 @@
  * Responsivo e acessível
  */
 import { getChildren } from '@/lib/api';
-import { CATEGORY_OPTIONS, PRIORITY_OPTIONS, RECURRENCE_OPTIONS, WEEKDAY_OPTIONS, type Child } from '@/lib/types';
+import { CATEGORY_OPTIONS, PRIORITY_OPTIONS, RECURRENCE_OPTIONS, REMINDER_OPTIONS, WEEKDAY_OPTIONS, type Child } from '@/lib/types';
+import { localToday } from '@/lib/dates';
+
+const today = localToday();
 
 // Buscar crianças da API (resiliente: se a API estiver fora, lista vazia).
 let children: Child[] = [];
@@ -25,7 +28,7 @@ const DURATION_OPTIONS = [
 ];
 
 // Data mínima para agendamento (hoje)
-const today = new Date().toISOString().split('T')[0];
+//local (nao usar UTC) a noite (depois das 21 horas) UTC vira dia seginte )
 ---
 
 <section class="w-full max-w-2xl mx-auto">
@@ -218,6 +221,46 @@ const today = new Date().toISOString().split('T')[0];
         </div>
       </div>
 
+      <!-- Lembretes (avisar antes / na hora) -->
+      <div>
+        <span class="block text-sm font-medium text-primary-dark mb-1.5">
+          Lembretes
+        </span>
+        <p class="text-xs text-gray-500 mb-3">Avise a criança sobre esta missão.</p>
+        <div class="space-y-3">
+          <label class="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              name="remindAtStart"
+              class="w-5 h-5 rounded border-primary/30 text-action focus:ring-action"
+            />
+            <span class="text-sm text-primary-dark">🔔 Avisar <strong>na hora</strong> marcada</span>
+          </label>
+          <div>
+            <label class="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                name="remindBefore"
+                id="remindBefore"
+                class="w-5 h-5 rounded border-primary/30 text-action focus:ring-action"
+              />
+              <span class="text-sm text-primary-dark">⏰ Avisar <strong>antes</strong></span>
+            </label>
+            <select
+              name="reminderMinutesBefore"
+              id="reminderMinutesBefore"
+              disabled
+              class="mt-2 ml-8 px-3 py-2 rounded-lg border-2 border-primary/30 focus:border-action focus:ring-2 focus:ring-action/20 outline-none transition-all bg-white cursor-pointer disabled:opacity-50"
+            >
+              <option value="" disabled selected>Escolha o tempo</option>
+              {REMINDER_OPTIONS.map((r) => (
+                <option value={r.value}>{r.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
       <!-- Seleção de Criança -->
       <div>
         <span class="block text-sm font-medium text-primary-dark mb-2">
@@ -344,6 +387,18 @@ const today = new Date().toISOString().split('T')[0];
     recurrenceSelect?.addEventListener('change', updateRecurrenceUI);
     updateRecurrenceUI();
 
+    // Lembretes: o select de "avisar antes" só habilita se o checkbox estiver marcado.
+    const remindBeforeCheck = document.getElementById('remindBefore') as HTMLInputElement | null;
+    const reminderSelect = document.getElementById('reminderMinutesBefore') as HTMLSelectElement | null;
+    function syncReminderSelect() {
+      if (!remindBeforeCheck || !reminderSelect) return;
+      reminderSelect.disabled = !remindBeforeCheck.checked;
+      if (!remindBeforeCheck.checked) reminderSelect.value = '';
+    }
+    remindBeforeCheck?.addEventListener('change', syncReminderSelect);
+    // Botão "Limpar" (reset): precisa re-desabilitar o select após o reset nativo.
+    form?.addEventListener('reset', () => setTimeout(syncReminderSelect, 0));
+
     form?.addEventListener('submit', async (event) => {
       event.preventDefault();
       if (!form.checkValidity()) return; // deixa o navegador validar os 'required'
@@ -359,6 +414,15 @@ const today = new Date().toISOString().split('T')[0];
         return;
       }
 
+      const remindAtStart = fd.get('remindAtStart') === 'on';
+      const remindBefore = fd.get('remindBefore') === 'on';
+      const reminderValue = fd.get('reminderMinutesBefore');
+      if (remindBefore && !reminderValue) {
+        showFeedback('error', 'Escolha quantos minutos antes avisar.');
+        return;
+      }
+      const reminderMinutesBefore = remindBefore ? Number(reminderValue) : null;
+
       const payload: TaskFormData = {
         title: String(fd.get('title') ?? ''),
         description: String(fd.get('description') ?? ''),
@@ -370,6 +434,8 @@ const today = new Date().toISOString().split('T')[0];
         estimatedDuration: String(fd.get('duration') ?? ''),
         recurrenceType,
         recurrenceDays: recurrenceType === 'once' ? [] : recurrenceDays,
+        remindAtStart,
+        reminderMinutesBefore,
       };
 
       const submitButton = form.querySelector<HTMLButtonElement>('button[type="submit"]');
