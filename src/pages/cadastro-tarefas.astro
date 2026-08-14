@@ -5,6 +5,7 @@ import TaskForm from '@/components/ui/TaskForm.astro';
 import { requireParent } from '@/lib/auth';
 
 const session = await requireParent(Astro);
+if(typeof session === 'string') return Astro.redirect(session);
 const { user } = session;
 ---
 

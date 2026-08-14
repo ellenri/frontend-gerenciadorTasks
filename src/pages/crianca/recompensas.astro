@@ -10,6 +10,8 @@ import type { Child, Reward } from '@/lib/types';
  * Mostra os prêmios que o responsável criou e que ela pode resgatar com seus pontos.
  */
 const session = await requireChild(Astro);
+if (typeof session === 'string') return Astro.redirect(session);
+if(typeof session ==='string') return Astro.redirect(session);
 const { user, cookie } = session;
 
 let me: Child | null = null;

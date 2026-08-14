@@ -4,12 +4,16 @@ import Header from '@/components/layout/Header.astro';
 import { getMyChild, getTasks, getRewards } from '@/lib/api';
 import { requireChild } from '@/lib/auth';
 import type { Child, Reward, Task } from '@/lib/types';
+import { localToday } from '@/lib/dates';
+
+const today = localToday();
 
 /**
  * Dashboard da criança: mostra seu perfil (pontos), as missões pendentes
  * e um atalho para as recompensas que ela pode resgatar.
  */
 const session = await requireChild(Astro);
+if (typeof session === 'string') return Astro.redirect(session);
 const { user, cookie } = session;
 
 let me: Child | null = null;
@@ -27,7 +31,6 @@ try {
 
 const pending = tasks.filter((t) => t.status === 'pending' || t.status === 'in_progress');
 const available = rewards.filter((r) => !r.redeemedById);
-const today = new Date().toISOString().slice(0, 10);
 const todays = pending.filter((t) => t.scheduledDate <= today);
 ---
 
@@ -47,7 +50,7 @@ const todays = pending.filter((t) => t.scheduledDate <= today);
         </div>
         <div class="min-w-0">
           <p class="text-surface-light text-sm">Olá,</p>
-          <h1 class="text-2xl md:text-3xl font-bold truncate">{me?.name ?? user.fullName}</h1>
+          <h1 class="text-2xl text-surface-light md:text-3xl text-surface-light font-bold truncate">{me?.name ?? user.fullName}</h1>
           <p class="text-highlight font-bold text-lg mt-1">⭐ {me?.points ?? 0} pontos</p>
         </div>
       </section>

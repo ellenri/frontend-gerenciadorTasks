@@ -3,13 +3,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import Header from '@/components/layout/Header.astro';
 import { AVATAR_OPTIONS } from '@/lib/types';
 import { requireParent } from '@/lib/auth';
+import { localToday } from '@/lib/dates';
+
+const today = localToday();
 
 // Exige login de responsável (só pais cadastram crianças).
 const session = await requireParent(Astro);
+if (typeof session === 'string') return Astro.redirect(session);
+if(typeof session ==='string') return Astro.redirect(session);
 const { user } = session;
 
 // Data máxima = hoje (não aceita data futura). Igual à validação do domínio.
-const today = new Date().toISOString().split('T')[0];
 ---
 
 <BaseLayout title="Nova Criança - Zapt">

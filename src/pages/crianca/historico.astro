@@ -21,6 +21,8 @@ import type { Child, Task } from '@/lib/types';
  * organizadas por período (padrão: hoje — gratificação imediata).
  */
 const session = await requireChild(Astro);
+if (typeof session === 'string') return Astro.redirect(session);
+if(typeof session ==='string') return Astro.redirect(session);
 const { user, cookie } = session;
 
 let me: Child | null = null;

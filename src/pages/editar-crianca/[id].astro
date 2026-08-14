@@ -4,8 +4,13 @@ import Header from '@/components/layout/Header.astro';
 import { AVATAR_OPTIONS } from '@/lib/types';
 import { getChildForEdit } from '@/lib/api';
 import { requireParent } from '@/lib/auth';
+import { localToday } from '@/lib/dates';
+
+const today = localToday();
 
 const session = await requireParent(Astro);
+if (typeof session === 'string') return Astro.redirect(session);
+if(typeof session ==='string') return Astro.redirect(session);
 const { user, cookie } = session;
 
 const id = Astro.params.id!;
@@ -17,7 +22,6 @@ try {
   throw Astro.redirect('/painel');
 }
 
-const today = new Date().toISOString().split('T')[0];
 ---
 
 <BaseLayout title="Editar Criança - Zapt">

@@ -5,6 +5,7 @@ import { getSession } from '@/lib/auth';
 
 // Sessão opcional: a home é pública, mas o cabeçalho mostra Entrar/Sair.
 const session = await getSession(Astro);
+if(typeof session ==='string') return Astro.redirect(session);
 const user = session?.user ?? null;
 ---
 
