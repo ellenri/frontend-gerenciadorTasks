@@ -1,0 +1,871 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Erros, Throw e Catch em JS/TS — Zapt</title>
+    <style>
+      :root {
+        --page: #f6f7fb;
+        --ink: #1f2937;
+        --muted: #6b7280;
+        --card: #ffffff;
+        --line: #e5e7eb;
+        --code-bg: #0f172a;
+        --code-ink: #e2e8f0;
+        --code-dim: #94a3b8;
+        --browser: #2563eb;
+        --browser-tint: #eff6ff;
+        --astro: #059669;
+        --astro-tint: #ecfdf5;
+        --dotnet: #7c3aed;
+        --dotnet-tint: #f5f3ff;
+        --gold: #f59e0b;
+        --rose: #e11d48;
+        --rose-tint: #fff1f2;
+        --good: #059669;
+        --good-tint: #ecfdf5;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--page);
+        color: var(--ink);
+        font-family:
+          "Segoe UI",
+          system-ui,
+          -apple-system,
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+
+      header.hero {
+        background: linear-gradient(
+          135deg,
+          #0f172a 0%,
+          #7f1d1d 60%,
+          #450a0a 100%
+        );
+        color: #fff;
+        padding: 54px 0 46px;
+        border-bottom: 6px solid var(--rose);
+      }
+      header.hero .kicker {
+        display: inline-block;
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #fecaca;
+        border: 1px solid rgba(254, 202, 202, 0.4);
+        padding: 4px 12px;
+        border-radius: 999px;
+        margin-bottom: 16px;
+      }
+      header.hero h1 {
+        font-size: 34px;
+        margin: 0 0 10px;
+        line-height: 1.2;
+        font-weight: 800;
+      }
+      header.hero p {
+        margin: 0;
+        color: #e5e7eb;
+        font-size: 17px;
+        max-width: 700px;
+      }
+      header.hero .meta {
+        margin-top: 18px;
+        font-size: 13px;
+        color: #cbd5e1;
+      }
+      header.hero .meta code {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 2px 7px;
+        border-radius: 5px;
+        color: #fff;
+      }
+
+      section {
+        padding: 46px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      section h2 {
+        font-size: 24px;
+        margin: 0 0 6px;
+        font-weight: 750;
+      }
+      section .lead {
+        color: var(--muted);
+        margin: 0 0 26px;
+        max-width: 740px;
+      }
+      .num-tag {
+        color: var(--rose);
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      pre {
+        background: var(--code-bg);
+        color: var(--code-ink);
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin: 10px 0 0;
+        overflow: auto;
+        font-size: 13px;
+        line-height: 1.65;
+        font-family:
+          "Cascadia Code", ui-monospace, SFMono-Regular, Menlo, Consolas,
+          monospace;
+        border: 1px solid #1e293b;
+      }
+      pre .c {
+        color: var(--code-dim);
+      }
+      pre .k {
+        color: #7dd3fc;
+      }
+      pre .s {
+        color: #86efac;
+      }
+      pre .fn {
+        color: #fcd34d;
+      }
+      pre .cls {
+        color: #c4b5fd;
+      }
+      pre .h {
+        background: #7f1d1d;
+        border-radius: 4px;
+        padding: 0 3px;
+      }
+      code.inline {
+        background: #fef2f2;
+        color: #991b1b;
+        padding: 1px 6px;
+        border-radius: 5px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 13px;
+      }
+
+      /* ===== flow-interruption diagram ===== */
+      .flow2col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        align-items: start;
+      }
+      .codecard {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 16px 18px;
+      }
+      .codecard h4 {
+        margin: 0 0 4px;
+        font-size: 14px;
+      }
+      .codecard .cap {
+        font-size: 12.5px;
+        color: var(--muted);
+        margin: 0 0 10px;
+      }
+      .jump {
+        position: relative;
+        margin-top: 10px;
+        padding: 12px 14px;
+        border-radius: 10px;
+        background: var(--rose-tint);
+        border: 1px dashed var(--rose);
+        font-size: 13.5px;
+      }
+      .jump b {
+        color: var(--rose);
+      }
+
+      /* ===== anatomy ===== */
+      .anat {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-top: 8px;
+      }
+      .prop {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px;
+        border-left: 4px solid var(--dotnet);
+      }
+      .prop .pn {
+        font-family: ui-monospace, monospace;
+        font-weight: 700;
+        color: var(--dotnet);
+        font-size: 13.5px;
+      }
+      .prop .pd {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .prop.gold {
+        border-left-color: var(--gold);
+      }
+      .prop.gold .pn {
+        color: #b45309;
+      }
+
+      /* ===== try/catch/finally pipeline ===== */
+      .pipe {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0;
+        margin-top: 6px;
+      }
+      .stage {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px 16px;
+        border-left: 5px solid var(--c);
+      }
+      .stage.try {
+        --c: var(--astro);
+      }
+      .stage.throw {
+        --c: var(--rose);
+      }
+      .stage.catch {
+        --c: var(--browser);
+      }
+      .stage.finally {
+        --c: var(--gold);
+      }
+      .stage .stagename {
+        font-weight: 800;
+        font-size: 13px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--c);
+      }
+      .down {
+        text-align: center;
+        font-size: 22px;
+        color: var(--muted);
+        height: 26px;
+        line-height: 1;
+      }
+
+      /* ===== class tree ===== */
+      .tree {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+        margin-top: 6px;
+      }
+      .node {
+        background: var(--card);
+        border: 2px solid var(--dotnet);
+        border-radius: 10px;
+        padding: 10px 18px;
+        text-align: center;
+        font-weight: 700;
+      }
+      .node .sub {
+        font-weight: 400;
+        font-size: 12px;
+        color: var(--muted);
+        display: block;
+      }
+      .node.root {
+        border-color: #475569;
+        background: #f1f5f9;
+      }
+      .row {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 0;
+      }
+      .node.child {
+        border-style: dashed;
+      }
+      .node.child.api {
+        border-color: var(--browser);
+      }
+      .node.child.api .ttl {
+        color: var(--browser);
+      }
+      .node.child.dom {
+        border-color: var(--rose);
+      }
+      .node.child.dom .ttl {
+        color: var(--rose);
+      }
+      .vline {
+        width: 2px;
+        height: 22px;
+        background: var(--line);
+      }
+      .hline {
+        height: 2px;
+        background: var(--line);
+        width: 60%;
+      }
+
+      /* ===== call stack ===== */
+      .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-width: 560px;
+        margin: 6px auto 0;
+      }
+      .frame {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+      }
+      .frame .fn {
+        font-family: ui-monospace, monospace;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .frame .role {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .frame.caught {
+        border-color: var(--good);
+        background: var(--good-tint);
+      }
+      .frame.throw {
+        border-color: var(--rose);
+        background: var(--rose-tint);
+      }
+      .uparrow {
+        text-align: center;
+        color: var(--rose);
+        font-size: 20px;
+        height: 22px;
+        line-height: 1;
+        font-weight: 700;
+      }
+
+      .callout {
+        border-radius: 12px;
+        padding: 16px 18px;
+        margin-top: 18px;
+        border: 1px solid;
+      }
+      .callout h4 {
+        margin: 0 0 6px;
+        font-size: 15px;
+      }
+      .callout p {
+        margin: 0;
+        font-size: 14px;
+      }
+      .callout.rose {
+        background: var(--rose-tint);
+        border-color: #fecdd3;
+        border-left: 5px solid var(--rose);
+      }
+      .callout.good {
+        background: var(--good-tint);
+        border-color: #a7f3d0;
+        border-left: 5px solid var(--good);
+      }
+      .callout.gold {
+        background: #fffbeb;
+        border-color: #fde68a;
+        border-left: 5px solid var(--gold);
+      }
+
+      .rules {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 6px;
+      }
+      .rule {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .rule .ico {
+        font-size: 22px;
+        line-height: 1.2;
+      }
+      .rule .rt {
+        font-weight: 700;
+        font-size: 14px;
+        margin: 0 0 2px;
+      }
+      .rule .rd {
+        font-size: 13px;
+        color: var(--muted);
+        margin: 0;
+      }
+      .rule.bad {
+        border-left: 4px solid var(--rose);
+      }
+      .rule.good {
+        border-left: 4px solid var(--good);
+      }
+
+      footer {
+        padding: 30px 0 60px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      footer code {
+        background: #fef2f2;
+        color: #991b1b;
+        padding: 1px 6px;
+        border-radius: 5px;
+        font-size: 12px;
+      }
+      .files span {
+        display: inline-block;
+        margin: 3px 6px 3px 0;
+      }
+
+      @media (max-width: 680px) {
+        .flow2col,
+        .anat,
+        .rules {
+          grid-template-columns: 1fr;
+        }
+        header.hero h1 {
+          font-size: 26px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="wrap">
+        <span class="kicker">Mapa visual · Conceito para fixar</span>
+        <h1>Erros, Throw e Catch em JS/TS</h1>
+        <p>
+          O mecanismo de <em>exceções</em> do JavaScript: o que é jogar um erro,
+          como capturar, como ele sobe a pilha — e por que jogar um objeto que
+          não é <code>Error</code> dá pau. Fundamentado no código real do Zapt.
+        </p>
+        <div class="meta">
+          Arquivos-base: <code>src/lib/api.ts</code> ·
+          <code>src/lib/auth.ts</code> ·
+          <code>Core/Exceptions/DomainException.cs</code> ·
+          <code>astro/.../controller.js</code>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===== 1. THROW ===== -->
+    <section>
+      <div class="wrap">
+        <div class="num-tag">1 · O sinal de emergência</div>
+        <h2><code class="inline">throw</code> — interrompe o fluxo normal</h2>
+        <p class="lead">
+          Quando algo dá errado (ou você quer parar tudo), você
+          <strong>joga</strong> (throw) um valor. A execução
+          <em>para na hora</em> nesse ponto e <em>sobe</em> procurando quem
+          saiba lidar com isso (um <code>catch</code>). Se ninguém pegar, o
+          programa "explode".
+        </p>
+
+        <div class="flow2col">
+          <div class="codecard">
+            <h4>✅ Jogar um <code>Error</code> de verdade</h4>
+            <p class="cap">No seu <code>api.ts</code> — o jeito certo:</p>
+            <pre><span class="k">throw</span> <span class="k">new</span> <span class="cls">ApiError</span>(message, response.status);
+<span class="c">//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</span>
+<span class="c">//  Um objeto Error (com message, name, stack).</span>
+<span class="c">//  As ferramentas conseguem "ler" ele.</span></pre>
+            <div class="jump">
+              O fluxo <b>para aqui</b> e sobe procurando um
+              <code>try/catch</code>.
+            </div>
+          </div>
+          <div class="codecard">
+            <h4>❌ Jogar um objeto comum</h4>
+            <p class="cap">
+              No seu <code>auth.ts</code> — o jeito que quebrou:
+            </p>
+            <pre><span class="k">throw</span> Astro.<span class="fn">redirect</span>(<span class="s">'/login'</span>);
+<span class="c">//     ^^^^^^^^^^^^^^^^^^^^^^^^^^</span>
+<span class="c">//  Retorna um objeto Response (NÃO é Error).</span>
+<span class="c">//  As ferramentas não sabem ler → "Error: {}".</span></pre>
+            <div class="jump">
+              O fluxo <b>para aqui</b> também — mas vira
+              <b>erro de servidor</b> (vimos o <code>Error: {}</code>).
+            </div>
+          </div>
+        </div>
+
+        <div class="callout rose">
+          <h4>⚡ O detalhe que poucos sabem</h4>
+          <p>
+            Em JavaScript você pode jogar <strong>qualquer coisa</strong> —
+            string, número, objeto, <code>Response</code>.
+            <em>Mas não deveria.</em> Jogue sempre <code>Error</code> (ou uma
+            subclasse). Só assim você preserva o <strong>stack trace</strong> (a
+            trilha de onde veio) e as ferramentas (devtools, Astro, Vite)
+            conseguem te mostrar algo útil.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 2. ANATOMY ===== -->
+    <section>
+      <div class="wrap">
+        <div class="num-tag">2 · Por dentro</div>
+        <h2>Anatomia de um objeto <code class="inline">Error</code></h2>
+        <p class="lead">
+          Um <code>Error</code> carrega informações pra depurar. É por isso que
+          ele é o "tipo certo" a jogar — ele tem campos que um objeto qualquer
+          não tem.
+        </p>
+        <div class="anat">
+          <div class="prop">
+            <div class="pn">.message</div>
+            <div class="pd">
+              O texto humano do erro. Ex.:
+              <code>"Erro 401 ao chamar /api/auth/me"</code>. Vem do
+              <code>super(message)</code>.
+            </div>
+          </div>
+          <div class="prop">
+            <div class="pn">.name</div>
+            <div class="pd">
+              O nome do tipo. Você pode sobrescrever:
+              <code>this.name = "ApiError"</code>. Ajuda a identificar de onde
+              veio.
+            </div>
+          </div>
+          <div class="prop">
+            <div class="pn">.stack</div>
+            <div class="pd">
+              A <strong>trilha de chamadas</strong> (call stack). É o que
+              aparece no terminal em vermelho.
+              <strong>Só existe em Error de verdade.</strong>
+            </div>
+          </div>
+          <div class="prop gold">
+            <div class="pn">.status (seu, custom)</div>
+            <div class="pd">
+              Campos que VOCÊ adiciona numa subclasse. Seu
+              <code>ApiError</code> soma <code>status</code> pra diferenciar 401
+              de 400.
+            </div>
+          </div>
+        </div>
+        <div class="callout rose">
+          <h4>
+            🤔 Por que <code>throw Astro.redirect()</code> virou
+            <code>Error: {}</code>?
+          </h4>
+          <p>
+            Um <code>Response</code> não tem <code>.message</code>, nem
+            <code>.name</code>, nem <code>.stack</code>. Quando o Astro tentou
+            "embrulhar" ele num erro seguro, não achou nada pra mostrar →
+            stringificou pra <code>{}</code>. Por isso a mensagem veio
+            <strong>vazia</strong>. Lição: objeto que não é <code>Error</code> =
+            informação perdida.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 3. TRY/CATCH ===== -->
+    <section>
+      <div class="wrap">
+        <div class="num-tag">3 · Capturar</div>
+        <h2><code class="inline">try / catch / finally</code> — o apanhador</h2>
+        <p class="lead">
+          O <code>try</code> diz "vou tentar isso". Se um
+          <code>throw</code> acontecer dentro dele, a execução pula pro
+          <code>catch</code> (em vez de explodir). O <code>finally</code> roda
+          sempre, erro ou não.
+        </p>
+        <div class="pipe">
+          <div class="stage try">
+            <span class="stagename">1 · try</span>
+            <pre style="margin-top: 8px"><span class="k">try</span> {
+  <span class="k">return await</span> <span class="fn">apiFetch</span>(<span class="s">'/api/auth/me'</span>, { cookie });
+}</pre>
+          </div>
+          <div class="down">↓ se um throw acontecer aqui dentro</div>
+          <div class="stage catch">
+            <span class="stagename">2 · catch (e)</span>
+            <pre
+              style="margin-top: 8px"
+            ><span class="k">} catch</span> (error) {
+  <span class="c">// "error" é O QUE FOI JOGADO (pode ser qualquer coisa!)</span>
+  <span class="k">if</span> (error <span class="k">instanceof</span> <span class="cls">ApiError</span> && error.status === <span class="s">401</span>) <span class="k">return null</span>;
+  console.<span class="fn">warn</span>(<span class="s">'[auth] API indisponível:'</span>, error);
+  <span class="k">return null</span>;
+}</pre>
+          </div>
+          <div class="down">↓ roda sempre (opcional)</div>
+          <div class="stage finally">
+            <span class="stagename">3 · finally</span>
+            <pre
+              style="margin-top: 8px"
+            ><span class="c">// finally { ... }  // fecha arquivo, libera recurso, etc.</span></pre>
+          </div>
+        </div>
+        <div class="callout gold">
+          <h4>🔑 A peça-chave: <code>instanceof</code></h4>
+          <p>
+            No <code>catch</code> você recebe o que foi jogado. Mas pode ser
+            <em>qualquer</em> tipo de erro. O <code>instanceof ApiError</code> é
+            como você pergunta: "esse erro é da minha classe?". Assim você
+            <strong>decide o que fazer</strong>: 401 → "não logado", outro erro
+            → "API caiu". Captura <strong>estreita e consciente</strong>, não
+            "pega tudo e engole".
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 4. CUSTOM ERRORS ===== -->
+    <section>
+      <div class="wrap">
+        <div class="num-tag">4 · Suas próprias exceções</div>
+        <h2>Erros customizados: <code class="inline">extends Error</code></h2>
+        <p class="lead">
+          Por que criar sua própria classe de erro? Pra
+          <strong>carregar informação extra</strong> (um <code>status</code>) e
+          pra <strong>distinguir tipos</strong> no <code>catch</code> com
+          <code>instanceof</code>. É o mesmo padrão no frontend (TS) e no
+          backend (C#).
+        </p>
+        <div class="tree">
+          <div class="node root">
+            Error<span class="sub">classe nativa do JS</span>
+          </div>
+          <div class="vline"></div>
+          <div class="row">
+            <div class="node child api">
+              <span class="ttl">ApiError</span
+              ><span class="sub">+ status: number<br />(seu api.ts)</span>
+            </div>
+            <div class="node child">
+              <span class="ttl" style="color: #475569">TypeError</span
+              ><span class="sub">nativa<br />(ex: undefined.role)</span>
+            </div>
+            <div class="node child dom">
+              <span class="ttl">DomainException</span
+              ><span class="sub">C# — seu backend<br />(regra de domínio)</span>
+            </div>
+          </div>
+        </div>
+        <pre><span class="c">// src/lib/api.ts — frontend (TypeScript)</span>
+<span class="k">export class</span> <span class="cls">ApiError</span> <span class="k">extends</span> <span class="cls">Error</span> {          <span class="c">// ← herda tudo de Error</span>
+  constructor(message, <span class="k">public readonly</span> status) {
+    <span class="k">super</span>(message);                  <span class="c">// ← chama o construtor do Error (define message/stack)</span>
+    <span class="k">this</span>.name = <span class="s">"ApiError"</span>;          <span class="c">// ← identifica a classe</span>
+  }
+}
+<span class="c">// No backend C# é a mesma ideia:  class DomainException : Exception { ... }</span></pre>
+        <div class="callout good">
+          <h4>💡 O porquê de existir</h4>
+          <p>
+            Sem <code>ApiError</code>, um erro 401 e um erro 500 seriam "só
+            erro" — você não saberia diferenciar. A subclasse
+            <strong>etiqueta</strong> o erro com o contexto
+            (<code>status</code>) que importa pra sua UI. O
+            <code>DomainException</code> do backend faz o mesmo: etiqueta "essa
+            quebra é uma regra de negócio" → o handler converte pra HTTP 400
+            limpo.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 5. PROPAGATION ===== -->
+    <section>
+      <div class="wrap">
+        <div class="num-tag">5 · O erro sobe</div>
+        <h2>Propagação: o erro viaja pela pilha de chamadas</h2>
+        <p class="lead">
+          Se uma função joga um erro e não tem <code>try/catch</code>, o erro
+          <strong>sobe</strong> pra quem chamou ela. E sobe, e sobe… até achar
+          um <code>catch</code>. Se não achar ninguém → o programa para (ou o
+          framework pega, como o Astro fez).
+        </p>
+        <div class="stack">
+          <div class="frame caught">
+            <span class="fn">getCurrentUser()</span
+            ><span class="role">✅ tem try/catch → PEGA o erro</span>
+          </div>
+          <div class="uparrow">↑ erro sobe</div>
+          <div class="frame">
+            <span class="fn">apiFetch()</span
+            ><span class="role">joga ApiError (sem catch)</span>
+          </div>
+          <div class="uparrow">↑ (mas aqui já foi pego)</div>
+          <div class="frame">
+            <span class="fn">fetch()</span
+            ><span class="role">resposta 401 chega aqui</span>
+          </div>
+        </div>
+        <pre><span class="c">// apiFetch joga:</span>
+<span class="k">throw new</span> <span class="cls">ApiError</span>(message, response.status);   <span class="c">// status 401</span>
+
+<span class="c">// ...sobe até getCurrentUser, que tem o catch:</span>
+<span class="k">} catch</span> (error) {
+  <span class="k">if</span> (error <span class="k">instanceof</span> <span class="cls">ApiError</span> && error.status === <span class="s">401</span>) <span class="k">return null</span>;  <span class="c">// ← capturado aqui</span>
+}</pre>
+        <div class="callout rose">
+          <h4>🔗 Onde isso explica o bug do seu <code>auth.ts</code></h4>
+          <p>
+            O <code>requireSession</code> joga um <code>Response</code> (sem
+            <code>try/catch</code> próprio). Esse erro <strong>sobe</strong>:
+            <code>requireParent</code> → página →
+            <strong>servidor Astro</strong> (<code>runWithErrorHandling</code>).
+            O Astro <em>é</em> o "apanhador de último recurso" — ele pega
+            QUALQUER coisa que chegue ao topo. Como era um
+            <code>Response</code> (não <code>Error</code>), virou
+            <code>Error: {}</code>. Ou seja:
+            <strong
+              >exceção não capturada = decisão de quem está no topo da
+              pilha.</strong
+            >
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. RULES ===== -->
+    <section>
+      <div class="wrap">
+        <div class="num-tag">6 · Pra levar</div>
+        <h2>Regras de ouro</h2>
+        <div class="rules">
+          <div class="rule good">
+            <div class="ico">✅</div>
+            <div>
+              <p class="rt">Jogue <code>Error</code> (ou subclasse)</p>
+              <p class="rd">
+                Nunca string, número ou objeto comum. Preserva o stack e as
+                ferramentas entendem.
+              </p>
+            </div>
+          </div>
+          <div class="rule bad">
+            <div class="ico">⚠️</div>
+            <div>
+              <p class="rt">Não use throw pra fluxo normal</p>
+              <p class="rd">
+                Tipo <code>throw redirect()</code> pra navegar. Exceção é pra
+                <em>casos excepcionais</em>. (Seu <code>auth.ts</code> aprendeu
+                isso.)
+              </p>
+            </div>
+          </div>
+          <div class="rule good">
+            <div class="ico">🎯</div>
+            <div>
+              <p class="rt">Capture estreito</p>
+              <p class="rd">
+                Pegue só o que você sabe tratar. Use <code>instanceof</code> pra
+                distinguir. Não engula erros silenciosamente.
+              </p>
+            </div>
+          </div>
+          <div class="rule good">
+            <div class="ico">🏷️</div>
+            <div>
+              <p class="rt">Crie subclasses com motivo</p>
+              <p class="rd">
+                <code>ApiError</code> soma <code>status</code>;
+                <code>DomainException</code> etiqueta "regra de negócio". Cada
+                uma carrega o contexto que importa.
+              </p>
+            </div>
+          </div>
+          <div class="rule bad">
+            <div class="ico">🕳️</div>
+            <div>
+              <p class="rt">Cuidado com catch vazio</p>
+              <p class="rd">
+                <code>catch (e) {}</code> esconde bugs. No mínimo, logue
+                (<code>console.warn</code>) como seu
+                <code>getCurrentUser</code> faz.
+              </p>
+            </div>
+          </div>
+          <div class="rule good">
+            <div class="ico">📖</div>
+            <div>
+              <p class="rt">Leia o stack trace</p>
+              <p class="rd">
+                As linhas <code>at função (arquivo:linha)</code> contam o
+                caminho exato. É seu melhor amigo na depuração.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap">
+        <strong>Referência gerada pra fixar o conceito.</strong> Releia depois
+        de mexer — e quando surgir um <code>Error: {}</code> ou um
+        <code>stack trace</code>, você vai saber ler.
+        <div class="files">
+          <span
+            >📎 <code>src/lib/api.ts</code> — ApiError, throw, try/catch</span
+          >
+          <span
+            >📎 <code>src/lib/auth.ts</code> — throw redirect (a
+            pegadinha)</span
+          >
+          <span
+            >📎 <code>Core/Exceptions/DomainException.cs</code> — paralelo no
+            C#</span
+          >
+          <span
+            >📎 <code>astro/.../controller.js</code> — o "apanhador do
+            topo"</span
+          >
+        </div>
+        <div style="margin-top: 14px">
+          Zapt · Missão Recompensa · referência de estudos
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

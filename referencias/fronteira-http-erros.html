@@ -1,0 +1,855 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>A fronteira HTTP — exceções viram dados — Zapt</title>
+    <style>
+      :root {
+        --page: #f6f7fb;
+        --ink: #1f2937;
+        --muted: #6b7280;
+        --card: #ffffff;
+        --line: #e5e7eb;
+        --code-bg: #0f172a;
+        --code-ink: #e2e8f0;
+        --code-dim: #94a3b8;
+        --browser: #2563eb;
+        --browser-tint: #eff6ff;
+        --astro: #059669;
+        --astro-tint: #ecfdf5;
+        --dotnet: #7c3aed;
+        --dotnet-tint: #f5f3ff;
+        --gold: #f59e0b;
+        --gold-tint: #fffbeb;
+        --rose: #e11d48;
+        --rose-tint: #fff1f2;
+        --good: #059669;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--page);
+        color: var(--ink);
+        font-family:
+          "Segoe UI",
+          system-ui,
+          -apple-system,
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+
+      header.hero {
+        background: linear-gradient(
+          135deg,
+          #0f172a 0%,
+          #4c1d95 55%,
+          #1e1b4b 100%
+        );
+        color: #fff;
+        padding: 54px 0 46px;
+        border-bottom: 6px solid var(--gold);
+      }
+      header.hero .kicker {
+        display: inline-block;
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #fde68a;
+        border: 1px solid rgba(253, 230, 138, 0.4);
+        padding: 4px 12px;
+        border-radius: 999px;
+        margin-bottom: 16px;
+      }
+      header.hero h1 {
+        font-size: 33px;
+        margin: 0 0 10px;
+        line-height: 1.2;
+        font-weight: 800;
+      }
+      header.hero p {
+        margin: 0;
+        color: #e9d5ff;
+        font-size: 17px;
+        max-width: 720px;
+      }
+      header.hero .meta {
+        margin-top: 18px;
+        font-size: 13px;
+        color: #c4b5fd;
+      }
+      header.hero .meta code {
+        background: rgba(255, 255, 255, 0.12);
+        padding: 2px 7px;
+        border-radius: 5px;
+        color: #fff;
+      }
+
+      section {
+        padding: 46px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      section h2 {
+        font-size: 24px;
+        margin: 0 0 6px;
+        font-weight: 750;
+      }
+      section .lead {
+        color: var(--muted);
+        margin: 0 0 24px;
+        max-width: 760px;
+      }
+      .num-tag {
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      pre {
+        background: var(--code-bg);
+        color: var(--code-ink);
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin: 10px 0 0;
+        overflow: auto;
+        font-size: 13px;
+        line-height: 1.65;
+        font-family:
+          "Cascadia Code", ui-monospace, SFMono-Regular, Menlo, Consolas,
+          monospace;
+        border: 1px solid #1e293b;
+      }
+      pre .c {
+        color: var(--code-dim);
+      }
+      pre .k {
+        color: #7dd3fc;
+      }
+      pre .s {
+        color: #86efac;
+      }
+      pre .fn {
+        color: #fcd34d;
+      }
+      pre .cls {
+        color: #c4b5fd;
+      }
+      pre .num {
+        color: #fca5a5;
+      }
+      code.inline {
+        background: #f5f3ff;
+        color: #5b21b6;
+        padding: 1px 6px;
+        border-radius: 5px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 13px;
+      }
+
+      /* two-program table */
+      table.cmp {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 6px;
+        font-size: 14px;
+      }
+      table.cmp th,
+      table.cmp td {
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      table.cmp th {
+        background: #f8fafc;
+        font-weight: 700;
+      }
+      table.cmp td:first-child {
+        font-weight: 600;
+        color: var(--muted);
+        background: #fafafa;
+      }
+      table.cmp .fe {
+        color: var(--browser);
+      }
+      table.cmp .be {
+        color: var(--dotnet);
+      }
+
+      /* centerpiece transformation strip */
+      .transform {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 8px;
+      }
+      .cycle {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 16px 18px;
+        border-top: 4px solid var(--c);
+      }
+      .cycle.be {
+        --c: var(--dotnet);
+        background: linear-gradient(180deg, var(--dotnet-tint), #fff 60%);
+      }
+      .cycle.fe {
+        --c: var(--browser);
+        background: linear-gradient(180deg, var(--browser-tint), #fff 60%);
+      }
+      .cycle h3 {
+        margin: 0 0 4px;
+        font-size: 16px;
+        color: var(--c);
+      }
+      .cycle .sub {
+        font-size: 12.5px;
+        color: var(--muted);
+        margin: 0 0 12px;
+      }
+      .step {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 7px 0;
+        border-top: 1px dashed var(--line);
+        font-size: 13.5px;
+      }
+      .step:first-of-type {
+        border-top: none;
+      }
+      .step .dot {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--c);
+        color: #fff;
+        flex: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 800;
+      }
+      .step .t {
+        font-weight: 600;
+      }
+      .step .d {
+        color: var(--muted);
+        font-size: 12.5px;
+      }
+
+      /* the wire / transformation band */
+      .wire {
+        margin: 14px 0;
+        background: var(--gold-tint);
+        border: 2px dashed var(--gold);
+        border-radius: 14px;
+        padding: 18px 16px;
+      }
+      .wire .wlabel {
+        text-align: center;
+        font-weight: 800;
+        color: #b45309;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-size: 12px;
+        margin-bottom: 12px;
+      }
+      .chain {
+        display: flex;
+        align-items: stretch;
+        gap: 0;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .node {
+        background: #fff;
+        border: 2px solid var(--nc);
+        border-radius: 12px;
+        padding: 10px 14px;
+        text-align: center;
+        min-width: 150px;
+      }
+      .node .nl {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .node .nv {
+        font-family: ui-monospace, monospace;
+        font-size: 12.5px;
+        font-weight: 700;
+        margin-top: 2px;
+        color: var(--nc);
+      }
+      .node.n-be {
+        --nc: var(--dotnet);
+      }
+      .node.n-data {
+        --nc: var(--gold);
+        background: var(--gold-tint);
+      }
+      .node.n-fe {
+        --nc: var(--browser);
+      }
+      .arrow-x {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0 6px;
+        color: var(--muted);
+        min-width: 90px;
+      }
+      .arrow-x .ar {
+        font-size: 22px;
+        line-height: 1;
+        color: var(--gold);
+        font-weight: 700;
+      }
+      .arrow-x .by {
+        font-size: 11px;
+        color: var(--muted);
+        text-align: center;
+        margin-top: 2px;
+      }
+      .arrow-x .by b {
+        color: var(--ink);
+      }
+
+      .callout {
+        border-radius: 12px;
+        padding: 16px 18px;
+        margin-top: 18px;
+        border: 1px solid;
+      }
+      .callout h4 {
+        margin: 0 0 6px;
+        font-size: 15px;
+      }
+      .callout p {
+        margin: 0;
+        font-size: 14px;
+      }
+      .callout.gold {
+        background: var(--gold-tint);
+        border-color: #fde68a;
+        border-left: 5px solid var(--gold);
+      }
+      .callout.rose {
+        background: var(--rose-tint);
+        border-color: #fecdd3;
+        border-left: 5px solid var(--rose);
+      }
+      .callout.good {
+        background: #ecfdf5;
+        border-color: #a7f3d0;
+        border-left: 5px solid var(--good);
+      }
+
+      /* status table */
+      table.status {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 6px;
+        font-size: 13.5px;
+      }
+      table.status th,
+      table.status td {
+        padding: 9px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      table.status th {
+        background: #f8fafc;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
+      table.status td:first-child {
+        font-family: ui-monospace, monospace;
+        font-weight: 700;
+        text-align: center;
+        width: 70px;
+      }
+      .s4 {
+        color: var(--gold);
+      }
+      .s5 {
+        color: var(--rose);
+      }
+      .s2 {
+        color: var(--browser);
+      }
+
+      /* two error types */
+      .twocol {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-top: 6px;
+      }
+      .ecard {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 16px;
+        border-left: 5px solid var(--c);
+      }
+      .ecard.api {
+        --c: var(--browser);
+      }
+      .ecard.native {
+        --c: var(--rose);
+      }
+      .ecard h4 {
+        margin: 0 0 4px;
+        font-size: 15px;
+        color: var(--c);
+      }
+      .ecard p {
+        margin: 0 0 8px;
+        font-size: 13.5px;
+      }
+      .ecard .src {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      footer {
+        padding: 30px 0 60px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      footer code {
+        background: #f5f3ff;
+        color: #5b21b6;
+        padding: 1px 6px;
+        border-radius: 5px;
+        font-size: 12px;
+      }
+      .files span {
+        display: inline-block;
+        margin: 3px 6px 3px 0;
+      }
+
+      @media (max-width: 760px) {
+        .transform,
+        .twocol {
+          grid-template-columns: 1fr;
+        }
+        .chain {
+          flex-direction: column;
+        }
+        .arrow-x {
+          flex-direction: row;
+          min-width: 0;
+          padding: 6px 0;
+        }
+        .arrow-x .ar {
+          transform: rotate(90deg);
+        }
+        header.hero h1 {
+          font-size: 26px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="wrap">
+        <span class="kicker">Mapa visual · Conceito para fixar</span>
+        <h1>A fronteira HTTP: a exceção vira dado (e volta a virar exceção)</h1>
+        <p>
+          O erro <strong>nunca</strong> atravessa do backend pro frontend. Ele é
+          <em>traduzido</em> na fronteira HTTP — vira status + JSON — e
+          <em>renasce</em> como um erro novo no outro lado. Dois ciclos
+          independentes, uma ponte de texto.
+        </p>
+        <div class="meta">
+          Arquivos-base: <code>TaskItem.cs</code> ·
+          <code>DomainExceptionHandler.cs</code> · <code>src/lib/api.ts</code>
+        </div>
+      </div>
+    </header>
+
+    <!-- 1. NO SINGLE COMPILER -->
+    <section>
+      <div class="wrap">
+        <div class="num-tag" style="color: var(--dotnet)">
+          1 · Quebrando o mito
+        </div>
+        <h2>Não existe "um compilador" — são dois programas</h2>
+        <p class="lead">
+          O frontend e o backend são <strong>processos separados</strong>, com
+          linguagens, compiladores e runtimes diferentes. Eles não compartilham
+          memória nem erros. A única ponte é HTTP.
+        </p>
+        <table class="cmp">
+          <tr>
+            <th></th>
+            <th class="fe">Frontend (Astro)</th>
+            <th class="be">Backend (.NET)</th>
+          </tr>
+          <tr>
+            <td>Linguagem</td>
+            <td class="fe">TypeScript</td>
+            <td class="be">C#</td>
+          </tr>
+          <tr>
+            <td>Compilador</td>
+            <td class="fe">tsc · Vite · esbuild</td>
+            <td class="be">Roslyn (csc)</td>
+          </tr>
+          <tr>
+            <td>Runtime</td>
+            <td class="fe">Node (SSR) + navegador</td>
+            <td class="be">.NET CLR</td>
+          </tr>
+          <tr>
+            <td>Processo</td>
+            <td class="fe">Node na porta <code>4321</code></td>
+            <td class="be">Kestrel na porta <code>5104</code></td>
+          </tr>
+          <tr>
+            <td>Erros</td>
+            <td class="fe"><code>Error</code> / <code>ApiError</code></td>
+            <td class="be">
+              <code>Exception</code> / <code>DomainException</code>
+            </td>
+          </tr>
+        </table>
+        <div class="callout gold">
+          <h4>🧠 A consequência crucial</h4>
+          <p>
+            Um compilador <strong>só enxerga o próprio lado</strong>. O
+            <code>tsc</code> não sabe que o C# existe; o Roslyn não sabe que o
+            TS existe. Portanto <strong>nenhum erro é compartilhado</strong> —
+            cada erro "pertence" ao programa onde nasceu. O que viaja entre eles
+            é só <strong>texto</strong> (requisição/resposta HTTP).
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. CENTERPIECE: TRANSFORMATION -->
+    <section>
+      <div class="wrap">
+        <div class="num-tag" style="color: var(--gold)">
+          2 · O coração do conceito
+        </div>
+        <h2>A tradução na fronteira: exceção → dado → exceção</h2>
+        <p class="lead">
+          Uma exceção do backend é
+          <strong>capturada e convertida em dados</strong> (status + JSON).
+          Esses dados viajam pelo HTTP. No frontend, são
+          <strong>lidos e viram uma exceção nova</strong>. Veja os dois ciclos e
+          a tradução no meio:
+        </p>
+
+        <div class="transform">
+          <div class="cycle be">
+            <h3>🟣 Ciclo 1 · Backend (.NET)</h3>
+            <p class="sub">exceção nasce, sobe, é capturada e convertida</p>
+            <div class="step">
+              <div class="dot">1</div>
+              <div>
+                <div class="t"><code>TaskItem</code> lança</div>
+                <div class="d"><code>throw new DomainException(...)</code></div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="dot">2</div>
+              <div>
+                <div class="t">sobe pela pilha</div>
+                <div class="d">
+                  TaskService e controller <strong>sem</strong> catch
+                </div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="dot">3</div>
+              <div>
+                <div class="t">handler captura</div>
+                <div class="d"><code>DomainExceptionHandler</code> pega</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="dot">4</div>
+              <div>
+                <div class="t">converte em dado</div>
+                <div class="d">escreve HTTP <strong>400</strong> + JSON</div>
+              </div>
+            </div>
+          </div>
+          <div class="cycle fe">
+            <h3>🌐 Ciclo 2 · Frontend (Astro)</h3>
+            <p class="sub">dado chega, é lido, vira exceção nova, sobe</p>
+            <div class="step">
+              <div class="dot">5</div>
+              <div>
+                <div class="t"><code>apiFetch</code> recebe</div>
+                <div class="d"><code>response.status === 400</code></div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="dot">6</div>
+              <div>
+                <div class="t">detecta erro</div>
+                <div class="d"><code>if (!response.ok)</code></div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="dot">7</div>
+              <div>
+                <div class="t">lê o dado</div>
+                <div class="d"><code>body.detail</code> → mensagem</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="dot">8</div>
+              <div>
+                <div class="t">exceção <em>renasce</em></div>
+                <div class="d"><code>throw new ApiError(msg, 400)</code></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="wire">
+          <div class="wlabel">
+            ⚡ A fronteira HTTP — onde exceção vira dado, e dado vira exceção
+          </div>
+          <div class="chain">
+            <div class="node n-be">
+              <div class="nl">objeto C#</div>
+              <div class="nv">DomainException</div>
+            </div>
+            <div class="arrow-x">
+              <div class="ar">→</div>
+              <div class="by"><b>DomainExceptionHandler</b><br />converte</div>
+            </div>
+            <div class="node n-data">
+              <div class="nl">dado no fio</div>
+              <div class="nv">400 + { title, detail }</div>
+            </div>
+            <div class="arrow-x">
+              <div class="ar">→</div>
+              <div class="by"><b>apiFetch</b><br />relê e rejoga</div>
+            </div>
+            <div class="node n-fe">
+              <div class="nl">objeto JS</div>
+              <div class="nv">ApiError(msg, 400)</div>
+            </div>
+          </div>
+        </div>
+        <div class="callout rose">
+          <h4>💡 Repare: nunca foi o "mesmo" erro</h4>
+          <p>
+            O <code>DomainException</code> (C#) e o <code>ApiError</code> (JS)
+            são objetos em <strong>runtimes diferentes</strong>. Um não "vira" o
+            outro literalmente — um <strong>morre</strong> (no handler), sua
+            <em>mensagem</em> viaja como texto, e um <strong>novo</strong> erro
+            nasce do outro lado carregando aquele texto. A identidade se perde;
+            só a <em>informação</em> atravessa.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. WALKTHROUGH -->
+    <section>
+      <div class="wrap">
+        <div class="num-tag" style="color: var(--rose)">3 · Passo a passo</div>
+        <h2>Cenário real: criar missão sem título</h2>
+        <p class="lead">
+          A mesma mensagem ("O título da missão é obrigatório.") viaja pelos
+          dois mundos. Veja o código exato em cada etapa.
+        </p>
+        <pre><span class="c">// 🟣 BACKEND — Core/Entities/TaskItem.cs</span>
+<span class="k">if</span> (<span class="fn">string.IsNullOrWhiteSpace</span>(title))
+    <span class="k">throw new</span> <span class="cls">DomainException</span>(<span class="s">"O título da missão é obrigatório."</span>);   <span class="c">// ← nasce aqui (C#)</span></pre>
+        <pre><span class="c">// 🟣 BACKEND — ExceptionHandling/DomainExceptionHandler.cs  (o tradutor)</span>
+<span class="k">if</span> (exception <span class="k">is not</span> <span class="cls">DomainException</span>) <span class="k">return false</span>;   <span class="c">// só trata a dele</span>
+httpContext.Response.StatusCode = <span class="num">400</span>;                        <span class="c">// ← vira STATUS</span>
+<span class="k">await</span> httpContext.Response.<span class="fn">WriteAsJsonAsync</span>(<span class="k">new</span> <span class="cls">ProblemDetails</span> {
+    Title = <span class="s">"Regra de negócio"</span>,
+    Detail = domainException.Message                      <span class="c">// ← vira JSON no corpo</span>
+});</pre>
+        <pre><span class="c">────────────────── pelo fio HTTP:  400  { "title":"Regra de negócio", "detail":"O título..." }  ──────────────────</span></pre>
+        <pre><span class="c">// 🌐 FRONTEND — src/lib/api.ts  (apiFetch relê e rejoga)</span>
+<span class="k">if</span> (!response.ok) {
+  <span class="k">const</span> body = <span class="k">await</span> response.<span class="fn">json</span>();
+  <span class="k">if</span> (body?.detail) message = body.detail;                 <span class="c">// "O título da missão..."</span>
+  <span class="k">throw new</span> <span class="cls">ApiError</span>(message, response.status);        <span class="c">// ← renasce aqui (JS, status 400)</span>
+}</pre>
+        <pre><span class="c">// 🌐 FRONTEND — TaskForm.astro  (catch mostra na tela)</span>
+} <span class="k">catch</span> (error) {
+  <span class="k">const</span> message = error <span class="k">instanceof</span> <span class="cls">ApiError</span> ? error.message : <span class="s">"Tente novamente."</span>;
+  <span class="fn">showFeedback</span>(<span class="s">'error'</span>, message);                       <span class="c">// ← usuário vê a mensagem</span>
+}</pre>
+      </div>
+    </section>
+
+    <!-- 4. HOW DOES IT KNOW -->
+    <section>
+      <div class="wrap">
+        <div class="num-tag" style="color: var(--browser)">
+          4 · A pergunta original
+        </div>
+        <h2>"Como o compilador sabe se é erro de frontend ou backend?"</h2>
+        <p class="lead">
+          <strong>Não sabe. E não precisa.</strong> O frontend não recebe "um
+          erro do backend" — recebe um <strong>número</strong> (status HTTP) e
+          um <strong>JSON</strong>. É a <em>convenção</em> do status que dá a
+          pista do que aconteceu.
+        </p>
+        <table class="status">
+          <tr>
+            <th>Status</th>
+            <th>Significado (convenção HTTP)</th>
+            <th>Quem "causou"</th>
+          </tr>
+          <tr>
+            <td class="s2">2xx</td>
+            <td>Sucesso — deu tudo certo</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td class="s4">400</td>
+            <td>Requisição inválida (regra de negócio quebrada)</td>
+            <td>você mandou algo errado</td>
+          </tr>
+          <tr>
+            <td class="s4">401</td>
+            <td>Não autenticado (sem cookie / cookie inválido)</td>
+            <td>você não está logado</td>
+          </tr>
+          <tr>
+            <td class="s4">403</td>
+            <td>Sem permissão (role não permite)</td>
+            <td>você é criança, não responsável</td>
+          </tr>
+          <tr>
+            <td class="s4">404</td>
+            <td>Não encontrado</td>
+            <td>o recurso não existe</td>
+          </tr>
+          <tr>
+            <td class="s5">5xx</td>
+            <td>Erro interno do servidor</td>
+            <td>o backend <strong>quebrou</strong> por dentro</td>
+          </tr>
+        </table>
+        <div class="callout gold">
+          <h4>🔎 Então, no frontend, como DISTINGO os erros?</h4>
+          <p>
+            Não é o compilador — é o <strong>tipo</strong> do erro. Se veio da
+            API, é <code>ApiError</code> (tem <code>.status</code>); se é bug do
+            próprio frontend, é um erro nativo (<code>TypeError</code> etc.). O
+            <code>instanceof ApiError</code> é o detector. Igualzinho à seção 3
+            do HTML <em>"erros-throw-catch"</em>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. TWO ERROR TYPES -->
+    <section>
+      <div class="wrap">
+        <div class="num-tag" style="color: var(--good)">
+          5 · No frontend, dois "sabores" de erro
+        </div>
+        <h2>Erros da API × erros do próprio frontend</h2>
+        <p class="lead">
+          No <code>catch</code> do frontend, o que chegou pode ter duas origens.
+          Saber diferenciar é o que te permite agir certo.
+        </p>
+        <div class="twocol">
+          <div class="ecard api">
+            <h4>🌐 ApiError — veio da API</h4>
+            <p>
+              O backend respondeu com status de erro.
+              <strong>Tem <code>.status</code></strong> (400, 401…). Você mostra
+              a mensagem pro usuário ou redireciona pro login.
+            </p>
+            <pre
+              style="margin-top: 8px"
+            ><span class="k">if</span> (error <span class="k">instanceof</span> <span class="cls">ApiError</span> && error.status === <span class="num">401</span>)
+  <span class="k">return null</span>;</pre>
+            <div class="src">src: api.ts · getCurrentUser</div>
+          </div>
+          <div class="ecard native">
+            <h4>💥 TypeError etc. — bug do frontend</h4>
+            <p>
+              Seu próprio JS quebrou (ex.: <code>undefined.role</code>).
+              <strong>Não tem status</strong>. É pra consertar o código, não pra
+              mostrar pro usuário.
+            </p>
+            <pre
+              style="margin-top: 8px"
+            ><span class="c">// veio do SEU código, não da API</span>
+console.<span class="fn">warn</span>(<span class="s">'bug inesperado:'</span>, error);</pre>
+            <div class="src">src: api.ts · getCurrentUser (o "else")</div>
+          </div>
+        </div>
+        <div class="callout good">
+          <h4>✅ Regra prática</h4>
+          <p>
+            No <code>catch</code>, pergunte sempre:
+            <em>"esse erro veio da API ou do meu código?"</em>. Use
+            <code>instanceof ApiError</code> pra separar. Erro da API → trate
+            pra UX (mensagem/login). Erro nativo → investigue e corrija.
+            <strong>Nunca engula silenciosamente.</strong>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap">
+        <strong>Referência gerada pra fixar o conceito.</strong> Sempre que um
+        erro aparecer, pergunte:
+        <em>"em qual runtime ele nasceu? atravessou a fronteira HTTP?"</em> — e
+        você vai saber ler o caminho.
+        <div class="files">
+          <span
+            >📎 <code>Core/Entities/TaskItem.cs</code> — onde a exceção
+            nasce</span
+          >
+          <span
+            >📎 <code>ExceptionHandling/DomainExceptionHandler.cs</code> — o
+            tradutor</span
+          >
+          <span
+            >📎 <code>src/lib/api.ts</code> — onde a exceção renasce
+            (ApiError)</span
+          >
+          <span>📚 companion: <code>erros-throw-catch.html</code></span>
+        </div>
+        <div style="margin-top: 14px">
+          Zapt · Missão Recompensa · coleção de referências
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
