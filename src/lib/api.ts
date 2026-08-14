@@ -19,18 +19,21 @@ import type {
   Task,
   TaskFormData,
   UpdateChildRequest,
-} from './types';
+} from "./types";
 
 const API_BASE =
   import.meta.env.PUBLIC_API_BASE ??
   // SSR (Node) precisa de URL absoluta; cliente usa relativo (proxy do Vite).
-  (import.meta.env.SSR ? 'http://localhost:5104' : '');
+  (import.meta.env.SSR ? "http://localhost:5104" : "");
 
 /** Erro de API com status HTTP, para tratamento diferenciado na UI. */
 export class ApiError extends Error {
-  constructor(message: string, public readonly status: number) {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
   }
 }
 
@@ -45,11 +48,11 @@ async function apiFetch<T>(path: string, init: FetchOptions = {}): Promise<T> {
   const isFormData = init.body instanceof FormData;
   const response = await fetch(`${API_BASE}${path}`, {
     headers: {
-      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(cookie ? { Cookie: cookie } : {}),
       ...headers,
     },
-    credentials: 'include',
+    credentials: "include",
     ...rest,
   });
 
@@ -58,11 +61,11 @@ async function apiFetch<T>(path: string, init: FetchOptions = {}): Promise<T> {
     if (
       response.status === 401 &&
       !import.meta.env.SSR &&
-      typeof location !== 'undefined' &&
-      !location.pathname.startsWith('/login') &&
-      !location.pathname.startsWith('/registro')
+      typeof location !== "undefined" &&
+      !location.pathname.startsWith("/login") &&
+      !location.pathname.startsWith("/registro")
     ) {
-      location.href = '/login';
+      location.href = "/login";
     }
 
     let message = `Erro ${response.status} ao chamar ${path}`;
@@ -82,82 +85,127 @@ async function apiFetch<T>(path: string, init: FetchOptions = {}): Promise<T> {
 }
 
 /** GET /api/children — lista as crianças (do responsável, ou só a si se for criança). */
-export async function getChildren(cookie = ''): Promise<Child[]> {
-  return apiFetch<Child[]>('/api/children', { cookie });
+export async function getChildren(cookie = ""): Promise<Child[]> {
+  return apiFetch<Child[]>("/api/children", { cookie });
 }
 
 /** GET /api/children/me — perfil da própria criança logada. */
-export async function getMyChild(cookie = ''): Promise<Child> {
-  return apiFetch<Child>('/api/children/me', { cookie });
+export async function getMyChild(cookie = ""): Promise<Child> {
+  return apiFetch<Child>("/api/children/me", { cookie });
 }
 
 /** GET /api/children/{id}/edit — dados completos de uma criança para edição (perfil + e-mail). */
-export async function getChildForEdit(id: string, cookie = ''): Promise<Child> {
+export async function getChildForEdit(id: string, cookie = ""): Promise<Child> {
   return apiFetch<Child>(`/api/children/${id}/edit`, { cookie });
 }
 
 /** PUT /api/children/{id} — edita uma criança (perfil + e-mail/senha). */
-export async function updateChild(id: string, data: UpdateChildRequest, cookie = ''): Promise<Child> {
-  return apiFetch<Child>(`/api/children/${id}`, { method: 'PUT', body: JSON.stringify(data), cookie });
+export async function updateChild(
+  id: string,
+  data: UpdateChildRequest,
+  cookie = "",
+): Promise<Child> {
+  return apiFetch<Child>(`/api/children/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+    cookie,
+  });
 }
 
 /** GET /api/tasks — lista todas as missões. */
-export async function getTasks(cookie = ''): Promise<Task[]> {
-  return apiFetch<Task[]>('/api/tasks', { cookie });
+export async function getTasks(cookie = ""): Promise<Task[]> {
+  return apiFetch<Task[]>("/api/tasks", { cookie });
 }
 
 /** POST /api/tasks — cria missão(ões) a partir do formulário (recorrência gera várias). */
-export async function createTask(data: TaskFormData, cookie = ''): Promise<Task[]> {
-  return apiFetch<Task[]>('/api/tasks', { method: 'POST', body: JSON.stringify(data), cookie });
+export async function createTask(
+  data: TaskFormData,
+  cookie = "",
+): Promise<Task[]> {
+  return apiFetch<Task[]>("/api/tasks", {
+    method: "POST",
+    body: JSON.stringify(data),
+    cookie,
+  });
 }
 
 /** POST /api/tasks/{id}/submit — criança envia a foto de comprovação (multipart). */
-export async function submitTask(id: string, file: File, cookie = ''): Promise<Task> {
+export async function submitTask(
+  id: string,
+  file: File,
+  cookie = "",
+): Promise<Task> {
   const form = new FormData();
-  form.append('file', file);
-  return apiFetch<Task>(`/api/tasks/${id}/submit`, { method: 'POST', body: form, cookie });
+  form.append("file", file);
+  return apiFetch<Task>(`/api/tasks/${id}/submit`, {
+    method: "POST",
+    body: form,
+    cookie,
+  });
 }
 
 /** POST /api/tasks/{id}/approve — responsável aprova a comprovação (conclui + pontos). */
-export async function approveTask(id: string, cookie = ''): Promise<Task> {
-  return apiFetch<Task>(`/api/tasks/${id}/approve`, { method: 'POST', cookie });
+export async function approveTask(id: string, cookie = ""): Promise<Task> {
+  return apiFetch<Task>(`/api/tasks/${id}/approve`, { method: "POST", cookie });
 }
 
 /** POST /api/tasks/{id}/reject — responsável rejeita com comentário (criança refaz). */
-export async function rejectTask(id: string, comment: string, cookie = ''): Promise<Task> {
+export async function rejectTask(
+  id: string,
+  comment: string,
+  cookie = "",
+): Promise<Task> {
   return apiFetch<Task>(`/api/tasks/${id}/reject`, {
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify({ comment }),
     cookie,
   });
 }
 
 /** POST /api/tasks/{id}/skip — cancela/abandona a missão (exclusivo do responsável). */
-export async function skipTask(id: string, cookie = ''): Promise<Task> {
-  return apiFetch<Task>(`/api/tasks/${id}/skip`, { method: 'POST', cookie });
+export async function skipTask(id: string, cookie = ""): Promise<Task> {
+  return apiFetch<Task>(`/api/tasks/${id}/skip`, { method: "POST", cookie });
 }
 
 /** POST /api/children — cadastra uma nova criança (com avatar escolhido). */
-export async function createChild(data: CreateChildRequest, cookie = ''): Promise<Child> {
-  return apiFetch<Child>('/api/children', { method: 'POST', body: JSON.stringify(data), cookie });
+export async function createChild(
+  data: CreateChildRequest,
+  cookie = "",
+): Promise<Child> {
+  return apiFetch<Child>("/api/children", {
+    method: "POST",
+    body: JSON.stringify(data),
+    cookie,
+  });
 }
 
 // ============================== Recompensas ==============================
 
 /** GET /api/rewards — lista todas as recompensas. */
-export async function getRewards(cookie = ''): Promise<Reward[]> {
-  return apiFetch<Reward[]>('/api/rewards', { cookie });
+export async function getRewards(cookie = ""): Promise<Reward[]> {
+  return apiFetch<Reward[]>("/api/rewards", { cookie });
 }
 
 /** POST /api/rewards — cria uma recompensa. */
-export async function createReward(data: CreateRewardRequest, cookie = ''): Promise<Reward> {
-  return apiFetch<Reward>('/api/rewards', { method: 'POST', body: JSON.stringify(data), cookie });
+export async function createReward(
+  data: CreateRewardRequest,
+  cookie = "",
+): Promise<Reward> {
+  return apiFetch<Reward>("/api/rewards", {
+    method: "POST",
+    body: JSON.stringify(data),
+    cookie,
+  });
 }
 
 /** POST /api/rewards/{id}/redeem — resgata a recompensa para uma criança (desconta pontos). */
-export async function redeemReward(id: string, childId: string, cookie = ''): Promise<Reward> {
+export async function redeemReward(
+  id: string,
+  childId: string,
+  cookie = "",
+): Promise<Reward> {
   return apiFetch<Reward>(`/api/rewards/${id}/redeem`, {
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify({ childId }),
     cookie,
   });
@@ -166,36 +214,53 @@ export async function redeemReward(id: string, childId: string, cookie = ''): Pr
 // ============================== Notificações ==============================
 
 /** GET /api/notifications — lista as notificações do usuário logado. */
-export async function getNotifications(cookie = ''): Promise<NotificationItem[]> {
-  return apiFetch<NotificationItem[]>('/api/notifications', { cookie });
+export async function getNotifications(
+  cookie = "",
+): Promise<NotificationItem[]> {
+  return apiFetch<NotificationItem[]>("/api/notifications", { cookie });
 }
 
 /** GET /api/notifications/unread-count — total de não-lidas (para o sininho). */
-export async function getUnreadNotificationCount(cookie = ''): Promise<number> {
-  const data = await apiFetch<{ count: number }>('/api/notifications/unread-count', { cookie });
+export async function getUnreadNotificationCount(cookie = ""): Promise<number> {
+  const data = await apiFetch<{ count: number }>(
+    "/api/notifications/unread-count",
+    { cookie },
+  );
   return data.count;
 }
 
 /** POST /api/notifications/{id}/read — marca como lida. */
-export async function markNotificationRead(id: string, cookie = ''): Promise<void> {
-  await apiFetch<void>(`/api/notifications/${id}/read`, { method: 'POST', cookie });
+export async function markNotificationRead(
+  id: string,
+  cookie = "",
+): Promise<void> {
+  await apiFetch<void>(`/api/notifications/${id}/read`, {
+    method: "POST",
+    cookie,
+  });
 }
 
 // ============================== Autenticação ==============================
 
 /** POST /api/auth/login — autentica (o servidor emite o cookie HttpOnly). */
 export async function login(data: LoginRequest): Promise<AuthUser> {
-  return apiFetch<AuthUser>('/api/auth/login', { method: 'POST', body: JSON.stringify(data) });
+  return apiFetch<AuthUser>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 }
 
 /** POST /api/auth/register — cadastra um responsável e já o autentica. */
 export async function register(data: RegisterRequest): Promise<AuthUser> {
-  return apiFetch<AuthUser>('/api/auth/register', { method: 'POST', body: JSON.stringify(data) });
+  return apiFetch<AuthUser>("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 }
 
 /** POST /api/auth/logout — encerra a sessão. */
 export async function logout(): Promise<void> {
-  await apiFetch<void>('/api/auth/logout', { method: 'POST' });
+  await apiFetch<void>("/api/auth/logout", { method: "POST" });
 }
 
 /**
@@ -203,15 +268,15 @@ export async function logout(): Promise<void> {
  * Retorna null se anônimo (401) OU se a API estiver indisponível (erro de rede).
  * Assim uma queda do backend degrada para "anônimo" em vez de quebrar a página (SSR).
  */
-export async function getCurrentUser(cookie = ''): Promise<AuthUser | null> {
+export async function getCurrentUser(cookie = ""): Promise<AuthUser | null> {
   try {
-    return await apiFetch<AuthUser>('/api/auth/me', { cookie });
+    return await apiFetch<AuthUser>("/api/auth/me", { cookie });
   } catch (error) {
     // 401 = simplesmente não autenticado.
     if (error instanceof ApiError && error.status === 401) return null;
     // Qualquer outro erro aqui é tipicamente de conectividade (API offline):
     // loga e degrada para anônimo em vez de propagar e quebrar o SSR.
-    console.warn('[auth] API indisponível, tratando como anônimo:', error);
+    console.warn("[auth] API indisponível, tratando como anônimo:", error);
     return null;
   }
 }

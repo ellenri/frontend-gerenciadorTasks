@@ -66,6 +66,8 @@ export interface Task {
   reviewerComment?: string | null;     // feedback do responsável ao rejeitar
   submittedAt?: Date | null;           // quando a criança enviou a comprovação
   recurrenceGroupId?: string | null;   // agrupa ocorrências de uma missão recorrente
+  remindAtStart?: boolean;               // avisar a criança na hora marcada
+  reminderMinutesBefore?: number | null; // avisar X min antes (5/10/15/30)
 }
 
 /**
@@ -87,7 +89,17 @@ export interface TaskFormData {
   estimatedDuration: string;
   recurrenceType: RecurrenceType;
   recurrenceDays: number[]; // DayOfWeek 0=Dom ... 6=Sáb
+  remindAtStart: boolean;               // avisar na hora marcada
+  reminderMinutesBefore: number | null; // avisar X min antes (5/10/15/30)
 }
+
+/** Opções de antecedência para o lembrete ("avisar antes"). */
+export const REMINDER_OPTIONS: { value: number; label: string }[] = [
+  { value: 5, label: '5 minutos antes' },
+  { value: 10, label: '10 minutos antes' },
+  { value: 15, label: '15 minutos antes' },
+  { value: 30, label: '30 minutos antes' },
+];
 
 /**
  * Opções para o campo de categoria
