@@ -38,12 +38,16 @@ const history = tasksResult.filter(
   (t) => t.status === 'completed' || t.status === 'skipped',
 );
 
+const childFilter = Astro.url.searchParams.get('crianca');
+const filteredHistory = childFilter
+? history.filter((t) => t.assignedTo === childFilter) : history;
+
 const period = normalizePeriod(Astro.url.searchParams.get('periodo'), 'Parent');
 const offset = normalizeOffset(Astro.url.searchParams.get('offset'));
 
 const window = getWindow(period, offset);
-const inWindow = filterInWindow(history, window);
-const summary = { ...summarize(inWindow), streak: computeStreak(history) };
+const inWindow = filterInWindow(filteredHistory, window);
+const summary = { ...summarize(inWindow), streak: computeStreak(filteredHistory) };
 const groups = groupByDay(inWindow);
 const title = windowTitle(period, window);
 ---

@@ -16,7 +16,7 @@ const { user = null } = Astro.props;
 const role = user?.role;
 const isParent = role === 'Parent';
 const isChild = role === 'Child';
-
+const firstName = user?.fullName.split(' ')[0] ?? '';
 let unreadCount = 0;
 if (user) {
   try {
@@ -41,15 +41,15 @@ const notifHref = isChild ? '/crianca/notificacoes' : '/notificacoes';
       </a>
 
       <!-- Links de Navegação + Área do usuário -->
-      <ul class="flex items-center gap-2 md:gap-4 whitespace-nowrap">
+      <ul class="flex items-center gap-2 md:gap-4 flex-wrap whitespace-nowrap">
         {isParent && (
           <>
             <li>
               <a
-                href="/cadastro-tarefas"
-                class="px-3 py-2 md:px-4 md:py-2 rounded-lg bg-action hover:bg-action-dark transition-colors text-sm md:text-base font-medium"
+                href="/cadastro-criancas"
+                class="px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-primary-dark transition-colors text-sm md:text-base font-medium"
               >
-                Nova Missão
+                Crianças
               </a>
             </li>
             <li>
@@ -84,14 +84,7 @@ const notifHref = isChild ? '/crianca/notificacoes' : '/notificacoes';
                 🏆 Ranking
               </a>
             </li>
-            <li>
-              <a
-                href="/cadastro-criancas"
-                class="px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-primary-dark transition-colors text-sm md:text-base font-medium"
-              >
-                + Criança
-              </a>
-            </li>
+
           </>
         )}
 
@@ -108,8 +101,7 @@ const notifHref = isChild ? '/crianca/notificacoes' : '/notificacoes';
             <li>
               <a
                 href="/crianca/recompensas"
-                class="px-3 py-2 md:px-4 md:py-2 rounded-lg bg-highlight hover:bg-highlight-dark text-primary transition-colors text-sm md:text-base font-medium"
-              >
+                class="px-3 py-2 md:px-4 md:py-2 rounded-lg bg-highlight hover:bg-highlight-dark text-primary transition-colors text-sm md:text-base font-medium">
                  Recompensas
               </a>
             </li>
@@ -148,7 +140,7 @@ const notifHref = isChild ? '/crianca/notificacoes' : '/notificacoes';
                   )}
                 </a>
                 <span class="hidden md:inline text-sm text-surface-light truncate max-w-[10rem]">
-                  Olá, {user.fullName}
+                  Olá, {firstName}
                 </span>
                 <button
                   id="logout-btn"

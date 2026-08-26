@@ -16,6 +16,9 @@ try {
 } catch (error) {
   console.error('Não foi possível carregar as notificações:', error);
 }
+
+const linkFor = (n: NotificationItem) : string | null =>
+  n.type === 'TaskSubmitted' ? '/tarefas' : null;
 ---
 
 <BaseLayout title="Notificações - Zapt">
@@ -43,12 +46,23 @@ try {
                 ]}
               >
                 <span class="text-xl" aria-hidden="true">🔔</span>
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm text-gray-800">{n.message}</p>
-                  <p class="text-xs text-gray-500 mt-1">
-                    {new Date(n.createdAt).toLocaleString('pt-BR')}
-                  </p>
-                </div>
+
+                <a
+                    href={linkFor(n) ?? undefined}
+                    class:list={[
+                      'flex-1 min-w-0 text-left hover:bg-surface rounded-lg p-2 -m-2 transition-colors',
+                      { 'cursor-pointer': !!linkFor(n) },
+                    ]}
+                  >
+                    <p class="text-sm text-gray-800">
+                      {n.message}
+                      {linkFor(n) && <span class="text-primary font-medium"> →</span>}
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">
+                      {new Date(n.createdAt).toLocaleString('pt-BR')}
+                    </p>
+                  </a>           
+                
                 {!n.isRead && (
                   <button
                     type="button"

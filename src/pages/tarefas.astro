@@ -96,7 +96,7 @@ const active = tasks.filter((t) => t.status === 'pending' || t.status === 'in_pr
                   </div>
 
                   {t.submissionImageUrl && (
-                    <a href={t.submissionImageUrl} target="_blank" rel="noopener" class="block mb-3">
+                    <a href={t.submissionImageUrl} class="lightbox-trigger block mb-3">
                       <img
                         src={t.submissionImageUrl}
                         alt="Comprovação"
@@ -185,10 +185,30 @@ const active = tasks.filter((t) => t.status === 'pending' || t.status === 'in_pr
       </div>
     </footer>
   </div>
+
+   <div id="lightbox" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+        role="dialog" aria-modal="true" aria-label="Comprovação expandida">
+     <img id="lightbox-img" src="" alt="Comprovação" class="max-h-full max-w-full rounded-lg shadow-2xl" />
+     <button id="lightbox-close" class="absolute top-4 right-4 text-white text-4xl leading-none" aria-label="Fechar">×</button>
+   </div>
+  
 </BaseLayout>
 
 <script>
   import { approveTask, rejectTask, skipTask, ApiError } from '../lib/api';
+
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img') as HTMLImageElement| null;
+  const closeLightbox = () => {lightbox?.classList.add('hidden'); if (lightboxImg) lightboxImg.src = ''; };
+
+  document.querySelectorAll<HTMLAnchorElement>('a.lightbox-trigger').forEach((a) => {
+     a.addEventListener('click', (e) => {
+       e.preventDefault();
+       if (lightbox && lightboxImg) { lightboxImg.src = a.href; lightbox.classList.remove('hidden'); }
+     });
+   });
+   lightbox?.addEventListener('click', closeLightbox);
+   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
 
   document.querySelectorAll<HTMLButtonElement>('.aprovar-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
