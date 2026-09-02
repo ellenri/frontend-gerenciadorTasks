@@ -11,7 +11,7 @@ import type { Child } from '@/lib/types';
  */
 const session = await requireParent(Astro);
 
-if(typeof session ==='string') return Astro.redirect(session);
+ if(typeof session ==='string') return Astro.redirect(session);
 const { user, cookie } = session;
 
 let children: Child[] = [];

@@ -21,7 +21,6 @@ import type { Child, Task } from '@/lib/types';
  * Agrupadas pela data AGENDADA — o que está previsto para hoje/esta semana.
  */
 const session = await requireChild(Astro);
-if (typeof session === 'string') return Astro.redirect(session);
 if(typeof session ==='string') return Astro.redirect(session);
 const { user, cookie } = session;
 

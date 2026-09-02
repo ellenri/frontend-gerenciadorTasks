@@ -9,7 +9,6 @@ import { localToday } from '@/lib/dates';
 const today = localToday();
 
 const session = await requireParent(Astro);
-if (typeof session === 'string') return Astro.redirect(session);
 if(typeof session ==='string') return Astro.redirect(session);
 const { user, cookie } = session;
 
