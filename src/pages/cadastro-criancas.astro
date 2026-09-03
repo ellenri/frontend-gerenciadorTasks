@@ -1,15 +1,15 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import Header from '@/components/layout/Header.astro';
-import { AVATAR_OPTIONS } from '@/lib/types';
-import { requireParent } from '@/lib/auth';
-import { localToday } from '@/lib/dates';
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Header from "@/components/layout/Header.astro";
+import { AVATAR_OPTIONS } from "@/lib/types";
+import { requireParent } from "@/lib/auth";
+import { localToday } from "@/lib/dates";
 
 const today = localToday();
 
 // Exige login de responsável (só pais cadastram crianças).
 const session = await requireParent(Astro);
-if(typeof session ==='string') return Astro.redirect(session);
+if (typeof session === "string") return Astro.redirect(session);
 const { user } = session;
 
 // Data máxima = hoje (não aceita data futura). Igual à validação do domínio.
@@ -24,14 +24,20 @@ const { user } = session;
       <nav class="mb-6 text-sm" aria-label="Navegação">
         <a href="/" class="text-primary hover:text-primary-dark">Início</a>
         <span class="text-primary/60"> / </span>
-        <a href="/ranking" class="text-primary hover:text-primary-dark">Ranking</a>
+        <a href="/ranking" class="text-primary hover:text-primary-dark"
+          >Ranking</a
+        >
         <span class="text-primary/60"> / </span>
-        <span class="text-primary font-medium" aria-current="page">Nova Criança</span>
+        <span class="text-primary font-medium" aria-current="page"
+          >Nova Criança</span
+        >
       </nav>
 
       <!-- Título -->
       <div class="mb-6">
-        <h1 class="text-2xl md:text-3xl font-bold text-primary mb-1">Nova Criança</h1>
+        <h1 class="text-2xl md:text-3xl font-bold text-primary mb-1">
+          Nova Criança
+        </h1>
         <p class="text-gray-600 text-sm md:text-base">
           Cadastre uma criança e escolha o avatar que ela vai usar nas missões!
         </p>
@@ -43,10 +49,17 @@ const { user } = session;
           <h2 class="text-xl font-bold text-white">Dados da Criança</h2>
         </div>
 
-        <form id="childForm" class="p-6 md:p-8 space-y-6" aria-label="Cadastro de criança">
+        <form
+          id="childForm"
+          class="p-6 md:p-8 space-y-6"
+          aria-label="Cadastro de criança"
+        >
           <!-- Nome -->
           <div>
-            <label for="name" class="block text-sm font-medium text-primary-dark mb-1.5">
+            <label
+              for="name"
+              class="block text-sm font-medium text-primary-dark mb-1.5"
+            >
               Nome
               <span class="text-action ml-1" aria-label="obrigatório">*</span>
             </label>
@@ -62,7 +75,10 @@ const { user } = session;
 
           <!-- Data de Nascimento -->
           <div>
-            <label for="birthDate" class="block text-sm font-medium text-primary-dark mb-1.5">
+            <label
+              for="birthDate"
+              class="block text-sm font-medium text-primary-dark mb-1.5"
+            >
               Data de Nascimento
               <span class="text-action ml-1" aria-label="obrigatório">*</span>
             </label>
@@ -82,27 +98,31 @@ const { user } = session;
               Escolha o Avatar
               <span class="text-action ml-1" aria-label="obrigatório">*</span>
             </span>
-            <div class="grid grid-cols-4 gap-3" role="radiogroup" aria-required="true">
-              {AVATAR_OPTIONS.map((avatar) => (
-                <label class="relative cursor-pointer group">
-                  <input
-                    type="radio"
-                    name="avatar"
-                    value={avatar}
-                    required
-                    class="peer sr-only"
-                  />
-                  <div
-                    class="rounded-xl border-2 border-primary/20 bg-surface overflow-hidden peer-checked:border-action peer-checked:ring-2 peer-checked:ring-action/30 hover:border-action hover:shadow-md transition-all"
-                  >
-                    <img
-                      src={avatar}
-                      alt="Avatar disponível"
-                      class="w-full aspect-square object-cover"
+            <div
+              class="grid grid-cols-4 gap-3"
+              role="radiogroup"
+              aria-required="true"
+            >
+              {
+                AVATAR_OPTIONS.map((avatar) => (
+                  <label class="relative cursor-pointer group">
+                    <input
+                      type="radio"
+                      name="avatar"
+                      value={avatar}
+                      required
+                      class="peer sr-only"
                     />
-                  </div>
-                </label>
-              ))}
+                    <div class="rounded-xl border-2 border-primary/20 bg-surface overflow-hidden peer-checked:border-action peer-checked:ring-2 peer-checked:ring-action/30 hover:border-action hover:shadow-md transition-all">
+                      <img
+                        src={avatar}
+                        alt="Avatar disponível"
+                        class="w-full aspect-square object-cover"
+                      />
+                    </div>
+                  </label>
+                ))
+              }
             </div>
           </div>
 
@@ -110,13 +130,20 @@ const { user } = session;
           <div class="pt-4 border-t border-primary/10">
             <p class="text-sm font-medium text-primary-dark mb-3">
               Acesso da criança
-              <span class="text-gray-500 font-normal">(e-mail + senha que ela vai usar para entrar)</span>
+              <span class="text-gray-500 font-normal"
+                >(e-mail + senha que ela vai usar para entrar)</span
+              >
             </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label for="email" class="block text-sm font-medium text-primary-dark mb-1.5">
+                <label
+                  for="email"
+                  class="block text-sm font-medium text-primary-dark mb-1.5"
+                >
                   E-mail
-                  <span class="text-action ml-1" aria-label="obrigatório">*</span>
+                  <span class="text-action ml-1" aria-label="obrigatório"
+                    >*</span
+                  >
                 </label>
                 <input
                   type="email"
@@ -129,9 +156,14 @@ const { user } = session;
                 />
               </div>
               <div>
-                <label for="password" class="block text-sm font-medium text-primary-dark mb-1.5">
+                <label
+                  for="password"
+                  class="block text-sm font-medium text-primary-dark mb-1.5"
+                >
                   Senha
-                  <span class="text-action ml-1" aria-label="obrigatório">*</span>
+                  <span class="text-action ml-1" aria-label="obrigatório"
+                    >*</span
+                  >
                 </label>
                 <input
                   type="password"
@@ -148,7 +180,9 @@ const { user } = session;
           </div>
 
           <!-- Botões -->
-          <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-primary/10">
+          <div
+            class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-primary/10"
+          >
             <button
               type="submit"
               class="flex-1 px-6 py-3 bg-action hover:bg-action-dark text-white font-semibold rounded-lg shadow-md transition-all disabled:opacity-50"
@@ -166,7 +200,23 @@ const { user } = session;
       </section>
 
       <!-- Feedback do envio -->
-      <div id="childFeedback" class="hidden mt-4" role="status" aria-live="polite"></div>
+      <div
+        id="childFeedback"
+        class="hidden mt-4"
+        role="status"
+        aria-live="polite"
+      >
+      </div>
+      
+        <!-- Modal de sucesso no cadastro -->
+  <div id="successModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-dark/60 backdrop-blur-sm">
+    <div class="max-w-sm w-full mx-4 text-center bg-white rounded-2xl shadow-xl p-8">
+      <div class="w-20 h-20 bg-highlight rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">✅</div>
+      <h2 class="text-2xl font-bold text-primary mb-1">Criança cadastrada!</h2>
+      <p id="successMessage" class="text-gray-600 mb-3"></p>
+      <p class="text-sm text-gray-500">Redirecionando para o painel…</p>
+    </div>
+  </div>
     </main>
 
     <footer class="bg-primary-dark text-white py-6 mt-auto">
@@ -178,42 +228,62 @@ const { user } = session;
 </BaseLayout>
 
 <script>
-  import { createChild, ApiError } from '../lib/api';
-  import type { CreateChildRequest } from '../lib/types';
+  import { createChild, ApiError } from "../lib/api";
+  import type { CreateChildRequest } from "../lib/types";
 
-  const form = document.getElementById('childForm') as HTMLFormElement | null;
-  const feedback = document.getElementById('childFeedback');
+  const form = document.getElementById("childForm") as HTMLFormElement | null;
+  const feedback = document.getElementById("childFeedback");
 
-  form?.addEventListener('submit', async (event) => {
+  form?.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!form.checkValidity()) return;
 
     const data = Object.fromEntries(new FormData(form).entries());
-    const submitButton = form.querySelector<HTMLButtonElement>('button[type="submit"]');
-    if (submitButton) submitButton.disabled = true;
+    const submitButton = form.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    );
+    const original = submitButton?.textContent ?? "";
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = "Salvando...";
+    }
 
     try {
       await createChild(data as unknown as CreateChildRequest);
-      showFeedback('success', 'Criança cadastrada! 🎉 Veja no Ranking.');
+      showSuccessModal(`Sucesso! ${data.name} já pode receber missões! 🚀`);
       form.reset();
     } catch (error) {
-      const message = error instanceof ApiError
-        ? error.message
-        : 'Não foi possível cadastrar. Tente novamente.';
-      showFeedback('error', message);
+      const message =
+        error instanceof ApiError
+          ? error.message
+          : "Não foi possível cadastrar. Tente novamente.";
+      showFeedback("error", message);
     } finally {
-      if (submitButton) submitButton.disabled = false;
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = original;
+      }
     }
   });
 
-  function showFeedback(type: 'success' | 'error', message: string) {
+     function showSuccessModal(detail: string) {
+     const modal = document.getElementById('successModal');
+     const msg = document.getElementById('successMessage');
+     if (msg) msg.textContent = detail;
+     modal?.classList.remove('hidden');
+     setTimeout(() => { window.location.href = '/painel'; }, 2500);
+   }
+
+  function showFeedback(type: "success" | "error", message: string) {
     if (!feedback) return;
     feedback.textContent = message;
-    feedback.className = 'mt-4 p-4 rounded-lg border text-sm font-medium ' +
-      (type === 'success'
-        ? 'bg-highlight/30 border-highlight text-primary-dark'
-        : 'bg-action/20 border-action text-action-dark');
-    feedback.classList.remove('hidden');
-    feedback.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    feedback.className =
+      "mt-4 p-4 rounded-lg border text-sm font-medium " +
+      (type === "success"
+        ? "bg-highlight/30 border-highlight text-primary-dark"
+        : "bg-action/20 border-action text-action-dark");
+    feedback.classList.remove("hidden");
+    feedback.setAttribute("role", type === "error" ? "alert" : "status");
   }
+
 </script>
